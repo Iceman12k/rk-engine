@@ -211,7 +211,7 @@ static void CL_ParseFrame(int extrabits)
         bits = MSG_ReadByte();
 
         suppressed = bits & SUPPRESSCOUNT_MASK;
-        if (cls.serverProtocol == PROTOCOL_VERSION_Q2PRO) {
+        if (cls.serverProtocol == PROTOCOL_VERSION_Q2PRO || cls.serverProtocol != PROTOCOL_VERSION_RK) {
             if (suppressed & FF_CLIENTPRED) {
                 // CLIENTDROP is implied, don't draw both
                 suppressed &= ~FF_CLIENTDROP;
@@ -310,10 +310,10 @@ static void CL_ParseFrame(int extrabits)
             Com_LPrintf(PRINT_DEVELOPER, "\n");
         }
 #endif
-        if (cls.serverProtocol == PROTOCOL_VERSION_Q2PRO) {
+        if (cls.serverProtocol == PROTOCOL_VERSION_Q2PRO || cls.serverProtocol == PROTOCOL_VERSION_RK) {
             // parse clientNum
             if (extraflags & EPS_CLIENTNUM) {
-                if (cls.protocolVersion < PROTOCOL_VERSION_Q2PRO_CLIENTNUM_SHORT) {
+                if (cls.protocolVersion < PROTOCOL_VERSION_Q2PRO_CLIENTNUM_SHORT && cls.serverProtocol == PROTOCOL_VERSION_Q2PRO) {
                     frame.clientNum = MSG_ReadByte();
                 } else {
                     frame.clientNum = MSG_ReadShort();
@@ -612,6 +612,43 @@ static void CL_ParseServerData(void)
         cl.pmp.speedmult = 2;
         cl.pmp.flyhack = true; // fly hack is unconditionally enabled
         cl.pmp.flyfriction = 4;
+	}
+	else if (cls.serverProtocol == PROTOCOL_VERSION_RK) {
+		i = MSG_ReadShort();
+		if (!RK_SUPPORTED(i)) {
+			Com_Error(ERR_DROP,
+				"RKEngine server reports unsupported protocol version %d.\n"
+				"Current client version is %d.", i, PROTOCOL_VERSION_RK_CURRENT);
+		}
+		Com_DPrintf("Using minor RKEngine protocol version %d\n", i);
+		cls.protocolVersion = i;
+		i = MSG_ReadByte();
+
+		Com_DPrintf("RKEngine server state %d\n", i);
+		cl.serverstate = i;
+		cinematic = i == ss_pic || i == ss_cinematic;
+
+		i = MSG_ReadByte();
+		if (i) {
+			Com_DPrintf("RKEngine strafejump hack enabled\n");
+			cl.pmp.strafehack = true;
+		}
+		i = MSG_ReadByte(); //atu QWMod
+		if (i) {
+			Com_DPrintf("RKEngine QW mode enabled\n");
+			PmoveEnableQW(&cl.pmp);
+		}
+		i = MSG_ReadByte();
+		if (i) {
+			Com_DPrintf("RKEngine waterjump hack enabled\n");
+			cl.pmp.waterhack = true;
+		}
+		cl.esFlags |= MSG_ES_UMASK | MSG_ES_LONGSOLID;
+		cl.esFlags |= MSG_ES_BEAMORIGIN;
+		cl.esFlags |= MSG_ES_SHORTANGLES;
+		cl.pmp.speedmult = 2;
+		cl.pmp.flyhack = true; // fly hack is unconditionally enabled
+		cl.pmp.flyfriction = 4;
     } else {
         cls.protocolVersion = 0;
     }
@@ -1269,7 +1306,7 @@ void CL_ParseServerMessage(void)
             continue;
 
         case svc_gamestate:
-            if (cls.serverProtocol != PROTOCOL_VERSION_Q2PRO) {
+            if (cls.serverProtocol != PROTOCOL_VERSION_Q2PRO && cls.serverProtocol != PROTOCOL_VERSION_RK) {
                 goto badbyte;
             }
             CL_ParseGamestate();

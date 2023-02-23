@@ -10,7 +10,7 @@ option('auto-reply',
 
 option('base-game',
   type: 'string',
-  value: 'baseq2',
+  value: 'zf',
   description: 'Name of the base game directory')
 
 option('client-gtv',
@@ -41,7 +41,7 @@ option('game-build-options',
 
 option('homedir',
   type: 'string',
-  value: '~/.q2pro',
+  value: '~/.zynfyr',
   description: 'Default value for "homedir" console variable')
 
 option('icmp-errors',
@@ -133,7 +133,7 @@ option('tga',
 
 option('variable-fps',
   type: 'boolean',
-  value: false,
+  value: true,
   description: 'Support for variable server FPS in both client and server')
 
 option('vid-geometry',

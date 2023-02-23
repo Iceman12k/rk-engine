@@ -162,6 +162,23 @@ void MSG_WriteLong64(int64_t c)
 
 /*
 =============
+MSG_WriteFloat
+=============
+*/
+void MSG_WriteFloat(float val)
+{
+	byte    *buf;
+	int		c;
+
+	memcpy(&c, &val, sizeof(int));
+
+	buf = SZ_GetSpace(&msg_write, 4);
+	WL32(buf, c);
+}
+
+
+/*
+=============
 MSG_WriteString
 =============
 */
@@ -1059,20 +1076,20 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
         MSG_WriteByte(to->pmove.pm_type);
 
     if (pflags & PS_M_ORIGIN) {
-        MSG_WriteShort(to->pmove.origin[0]);
-        MSG_WriteShort(to->pmove.origin[1]);
+        MSG_WriteFloat(to->pmove.origin[0]);
+		MSG_WriteFloat(to->pmove.origin[1]);
     }
 
     if (eflags & EPS_M_ORIGIN2)
-        MSG_WriteShort(to->pmove.origin[2]);
+		MSG_WriteFloat(to->pmove.origin[2]);
 
     if (pflags & PS_M_VELOCITY) {
-        MSG_WriteShort(to->pmove.velocity[0]);
-        MSG_WriteShort(to->pmove.velocity[1]);
+		MSG_WriteFloat(to->pmove.velocity[0]);
+		MSG_WriteFloat(to->pmove.velocity[1]);
     }
 
     if (eflags & EPS_M_VELOCITY2)
-        MSG_WriteShort(to->pmove.velocity[2]);
+		MSG_WriteFloat(to->pmove.velocity[2]);
 
     if (pflags & PS_M_TIME)
         MSG_WriteByte(to->pmove.pm_time);
@@ -1440,6 +1457,24 @@ int64_t MSG_ReadLong64(void)
     }
 
     return c;
+}
+
+float MSG_ReadFloat(void)
+{
+	byte *buf = MSG_ReadData(4);
+	int c;
+	float val;
+
+	if (!buf) {
+		c = -1;
+		val = -1;
+	}
+	else {
+		c = RL32(buf);
+		memcpy(&val, &c, sizeof(float));
+	}
+
+	return val;
 }
 
 size_t MSG_ReadString(char *dest, size_t size)
@@ -2032,21 +2067,21 @@ void MSG_ParseDeltaPlayerstate_Enhanced(const player_state_t    *from,
         to->pmove.pm_type = MSG_ReadByte();
 
     if (flags & PS_M_ORIGIN) {
-        to->pmove.origin[0] = MSG_ReadShort();
-        to->pmove.origin[1] = MSG_ReadShort();
+        to->pmove.origin[0] = MSG_ReadFloat();
+        to->pmove.origin[1] = MSG_ReadFloat();
     }
 
     if (extraflags & EPS_M_ORIGIN2) {
-        to->pmove.origin[2] = MSG_ReadShort();
+        to->pmove.origin[2] = MSG_ReadFloat();
     }
 
     if (flags & PS_M_VELOCITY) {
-        to->pmove.velocity[0] = MSG_ReadShort();
-        to->pmove.velocity[1] = MSG_ReadShort();
+        to->pmove.velocity[0] = MSG_ReadFloat();
+        to->pmove.velocity[1] = MSG_ReadFloat();
     }
 
     if (extraflags & EPS_M_VELOCITY2) {
-        to->pmove.velocity[2] = MSG_ReadShort();
+        to->pmove.velocity[2] = MSG_ReadFloat();
     }
 
     if (flags & PS_M_TIME)

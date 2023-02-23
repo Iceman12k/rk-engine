@@ -179,8 +179,8 @@ typedef struct {
 
 // hack for smooth BSP model rotation
 #define Q2PRO_SHORTANGLES(c, e) \
-    ((c)->protocol == PROTOCOL_VERSION_Q2PRO && \
-     (c)->version >= PROTOCOL_VERSION_Q2PRO_SHORT_ANGLES && \
+    (((c)->protocol == PROTOCOL_VERSION_RK || ((c)->protocol == PROTOCOL_VERSION_Q2PRO && \
+     (c)->version >= PROTOCOL_VERSION_Q2PRO_SHORT_ANGLES)) && \
      sv.state == ss_game && \
      EDICT_POOL(c, e)->solid == SOLID_BSP)
 
@@ -751,6 +751,7 @@ void SV_PrintMiscInfo(void);
 void SV_BuildClientFrame(client_t *client);
 void SV_WriteFrameToClient_Default(client_t *client);
 void SV_WriteFrameToClient_Enhanced(client_t *client);
+void SV_WriteFrameToClient_RK(client_t *client);
 
 //
 // sv_game.c

@@ -531,7 +531,7 @@ static void SVC_Info(void)
         return; // ignore in single player
 
     version = atoi(Cmd_Argv(1));
-    if (version < PROTOCOL_VERSION_DEFAULT || version > PROTOCOL_VERSION_Q2PRO)
+    if (version < PROTOCOL_VERSION_DEFAULT || version > PROTOCOL_VERSION_RK)
         return; // ignore invalid versions
 
     len = Q_scnprintf(buffer, sizeof(buffer),
@@ -641,7 +641,7 @@ static bool parse_basic_params(conn_params_t *p)
 
     // check for invalid protocol version
     if (p->protocol < PROTOCOL_VERSION_OLD ||
-        p->protocol > PROTOCOL_VERSION_Q2PRO)
+        p->protocol > PROTOCOL_VERSION_RK)
         return reject("Unsupported protocol version %d.\n", p->protocol);
 
     // check for valid, but outdated protocol version
@@ -802,6 +802,31 @@ static bool parse_enhanced_params(conn_params_t *p)
             }
         } else {
             p->version = PROTOCOL_VERSION_Q2PRO_MINIMUM;
+        }
+    } else if (p->protocol == PROTOCOL_VERSION_RK) {
+        // set netchan type
+        s = Cmd_Argv(6);
+        if (*s) {
+            p->nctype = atoi(s);
+            if (p->nctype < NETCHAN_OLD || p->nctype > NETCHAN_NEW)
+                return reject("Invalid netchan type.\n");
+        } else {
+            p->nctype = NETCHAN_NEW;
+        }
+
+        // set zlib
+        s = Cmd_Argv(7);
+        p->has_zlib = !*s || atoi(s);
+
+        // set minor protocol version
+        s = Cmd_Argv(8);
+        if (*s) {
+            p->version = atoi(s);
+            clamp(p->version,
+                  PROTOCOL_VERSION_RK_MINIMUM,
+                  PROTOCOL_VERSION_RK_CURRENT);
+        } else {
+            p->version = PROTOCOL_VERSION_RK_MINIMUM;
         }
     }
 
@@ -998,6 +1023,18 @@ static void init_pmove_and_es_flags(client_t *newcl)
         }
         force = 1;
     }
+
+	if (newcl->protocol == PROTOCOL_VERSION_RK) {
+		if (sv_qwmod->integer) {
+			PmoveEnableQW(&newcl->pmp);
+		}
+		newcl->pmp.flyhack = true;
+		newcl->pmp.flyfriction = 4;
+		newcl->esFlags |= MSG_ES_UMASK | MSG_ES_LONGSOLID;
+		newcl->esFlags |= MSG_ES_BEAMORIGIN;
+		force = 1;
+	}
+
     newcl->pmp.waterhack = sv_waterjump_hack->integer >= force;
 }
 
@@ -1008,7 +1045,7 @@ static void send_connect_packet(client_t *newcl, int nctype)
     const char *dlstring1   = "";
     const char *dlstring2   = "";
 
-    if (newcl->protocol == PROTOCOL_VERSION_Q2PRO) {
+    if (newcl->protocol == PROTOCOL_VERSION_Q2PRO || newcl->protocol == PROTOCOL_VERSION_RK) {
         if (nctype == NETCHAN_NEW)
             ncstring = " nc=1";
         else
@@ -1138,8 +1175,10 @@ static void SVC_DirectConnect(void)
 
     if (newcl->protocol == PROTOCOL_VERSION_DEFAULT) {
         newcl->WriteFrame = SV_WriteFrameToClient_Default;
-    } else {
-        newcl->WriteFrame = SV_WriteFrameToClient_Enhanced;
+	} else if (newcl->protocol == PROTOCOL_VERSION_RK) {
+		newcl->WriteFrame = SV_WriteFrameToClient_RK;
+	} else {
+		newcl->WriteFrame = SV_WriteFrameToClient_Enhanced;
     }
 
     // loopback client doesn't need to reconnect

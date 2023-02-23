@@ -30,6 +30,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define PROTOCOL_VERSION_Q2PRO      36
 #define PROTOCOL_VERSION_MVD        37 // not used for UDP connections
 
+#define PROTOCOL_VERSION_RK			45
+
 #define PROTOCOL_VERSION_R1Q2_MINIMUM           1903    // b6377
 #define PROTOCOL_VERSION_R1Q2_UCMD              1904    // b7387
 #define PROTOCOL_VERSION_R1Q2_LONG_SOLID        1905    // b7759
@@ -49,6 +51,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define PROTOCOL_VERSION_MVD_MINIMUM            2009    // r168
 #define PROTOCOL_VERSION_MVD_CURRENT            2010    // r177
 
+#define PROTOCOL_VERSION_RK_MINIMUM				4001
+#define PROTOCOL_VERSION_RK_CURRENT				4001
+
 #define R1Q2_SUPPORTED(x) \
     ((x) >= PROTOCOL_VERSION_R1Q2_MINIMUM && \
      (x) <= PROTOCOL_VERSION_R1Q2_CURRENT)
@@ -60,6 +65,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define MVD_SUPPORTED(x) \
     ((x) >= PROTOCOL_VERSION_MVD_MINIMUM && \
      (x) <= PROTOCOL_VERSION_MVD_CURRENT)
+
+#define RK_SUPPORTED(x) \
+    ((x) >= PROTOCOL_VERSION_RK_MINIMUM && \
+     (x) <= PROTOCOL_VERSION_RK_CURRENT)
 
 #define VALIDATE_CLIENTNUM(x) \
     ((x) >= -1 && (x) < MAX_EDICTS - 1)

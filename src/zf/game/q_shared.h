@@ -16,7 +16,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#pragma once
+#ifndef SHARED_H
+#define SHARED_H
 
 //
 // shared.h -- included first by ALL program modules
@@ -38,7 +39,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <limits.h>
 #include <time.h>
 
-#include "shared/platform.h"
+#if HAVE_ENDIAN_H
+#include <endian.h>
+#endif
+
+#include "q_platform.h"
 
 #define q_countof(a)        (sizeof(a) / sizeof(a[0]))
 
@@ -101,7 +106,6 @@ q_noreturn q_printf(2, 3);
 #define Com_Printf(...) Com_LPrintf(PRINT_ALL, __VA_ARGS__)
 #define Com_WPrintf(...) Com_LPrintf(PRINT_WARNING, __VA_ARGS__)
 #define Com_EPrintf(...) Com_LPrintf(PRINT_ERROR, __VA_ARGS__)
-#define Com_NPrintf(...) Com_LPrintf(PRINT_NOTICE, __VA_ARGS__)
 
 #define Q_assert(expr) \
     do { if (!(expr)) Com_Error(ERR_FATAL, "%s: assertion `%s' failed", __func__, #expr); } while (0)
@@ -154,10 +158,6 @@ typedef int fixed16_t;
 struct cplane_s;
 
 extern const vec3_t vec3_origin;
-
-typedef struct vrect_s {
-    int             x, y, width, height;
-} vrect_t;
 
 #define DEG2RAD(a)      ((a) * (M_PI / 180))
 #define RAD2DEG(a)      ((a) * (180 / M_PI))
@@ -445,6 +445,7 @@ char *Q_strcasestr(const char *s1, const char *s2);
 char *Q_strchrnul(const char *s, int c);
 void *Q_memccpy(void *dst, const void *src, int c, size_t size);
 size_t Q_strnlen(const char *s, size_t maxlen);
+void Q_setenv(const char *name, const char *value);
 
 char *COM_SkipPath(const char *pathname);
 size_t COM_StripExtension(char *out, const char *in, size_t size);
@@ -512,7 +513,7 @@ static inline float FloatSwap(float f)
     return dat2.f;
 }
 
-#if USE_LITTLE_ENDIAN
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 #define BigShort    ShortSwap
 #define BigLong     LongSwap
 #define BigFloat    FloatSwap
@@ -521,7 +522,7 @@ static inline float FloatSwap(float f)
 #define LittleFloat(x)    ((float)(x))
 #define MakeRawLong(b1,b2,b3,b4) (((unsigned)(b4)<<24)|((b3)<<16)|((b2)<<8)|(b1))
 #define MakeRawShort(b1,b2) (((b2)<<8)|(b1))
-#elif USE_BIG_ENDIAN
+#elif __BYTE_ORDER == __BIG_ENDIAN
 #define BigShort(x)     ((uint16_t)(x))
 #define BigLong(x)      ((uint32_t)(x))
 #define BigFloat(x)     ((float)(x))
@@ -534,7 +535,11 @@ static inline float FloatSwap(float f)
 #error Unknown byte order
 #endif
 
-#define MakeLittleLong(b1,b2,b3,b4) (((unsigned)(b4)<<24)|((b3)<<16)|((b2)<<8)|(b1))
+#define LittleLongMem(p) (((unsigned)(p)[3]<<24)|((p)[2]<<16)|((p)[1]<<8)|(p)[0])
+#define LittleShortMem(p) (((p)[1]<<8)|(p)[0])
+
+#define RawLongMem(p) MakeRawLong((p)[0],(p)[1],(p)[2],(p)[3])
+#define RawShortMem(p) MakeRawShort((p)[0],(p)[1])
 
 #define LittleVector(a,b) \
     ((b)[0]=LittleFloat((a)[0]),\
@@ -582,12 +587,6 @@ CVARS (console variables)
                             // but can be set from the command line
 #define CVAR_LATCH      16  // save changes until server restart
 
-struct cvar_s;
-struct genctx_s;
-
-typedef void (*xchanged_t)(struct cvar_s *);
-typedef void (*xgenerator_t)(struct genctx_s *);
-
 // nothing outside the cvar.*() functions should modify these fields!
 typedef struct cvar_s {
     char        *name;
@@ -597,15 +596,6 @@ typedef struct cvar_s {
     qboolean    modified;   // set each time the cvar is changed
     float       value;
     struct cvar_s *next;
-
-// ------ new stuff ------
-#if USE_CLIENT || USE_SERVER
-    int         integer;
-    char        *default_string;
-    xchanged_t      changed;
-    xgenerator_t    generator;
-    struct cvar_s   *hashNext;
-#endif
 } cvar_t;
 
 #endif      // CVAR
@@ -663,8 +653,6 @@ COLLISION DETECTION
 #define SURF_TRANS66    0x20
 #define SURF_FLOWING    0x40    // scroll towards angle
 #define SURF_NODRAW     0x80    // don't bother referencing the texture
-
-#define SURF_ALPHATEST  0x02000000  // used by kmquake2
 
 
 
@@ -757,7 +745,7 @@ typedef enum {
 typedef struct {
     pmtype_t    pm_type;
 
-    float       origin[3];      // 12.3
+    short       origin[3];      // 12.3
     short       velocity[3];    // 12.3
     byte        pm_flags;       // ducked, jump_held, etc
     byte        pm_time;        // each unit = 8 ms
@@ -890,133 +878,40 @@ typedef struct {
 //
 // muzzle flashes / player effects
 //
-enum {
-    MZ_BLASTER,
-    MZ_MACHINEGUN,
-    MZ_SHOTGUN,
-    MZ_CHAINGUN1,
-    MZ_CHAINGUN2,
-    MZ_CHAINGUN3,
-    MZ_RAILGUN,
-    MZ_ROCKET,
-    MZ_GRENADE,
-    MZ_LOGIN,
-    MZ_LOGOUT,
-    MZ_RESPAWN,
-    MZ_BFG,
-    MZ_SSHOTGUN,
-    MZ_HYPERBLASTER,
-    MZ_ITEMRESPAWN,
-
+#define MZ_BLASTER          0
+#define MZ_MACHINEGUN       1
+#define MZ_SHOTGUN          2
+#define MZ_CHAINGUN1        3
+#define MZ_CHAINGUN2        4
+#define MZ_CHAINGUN3        5
+#define MZ_RAILGUN          6
+#define MZ_ROCKET           7
+#define MZ_GRENADE          8
+#define MZ_LOGIN            9
+#define MZ_LOGOUT           10
+#define MZ_RESPAWN          11
+#define MZ_BFG              12
+#define MZ_SSHOTGUN         13
+#define MZ_HYPERBLASTER     14
+#define MZ_ITEMRESPAWN      15
 // RAFAEL
-    MZ_IONRIPPER,
-    MZ_BLUEHYPERBLASTER,
-    MZ_PHALANX,
+#define MZ_IONRIPPER        16
+#define MZ_BLUEHYPERBLASTER 17
+#define MZ_PHALANX          18
+#define MZ_SILENCED         128     // bit flag ORed with one of the above numbers
 
 //ROGUE
-    MZ_ETF_RIFLE = 30,
-    MZ_UNUSED,
-    MZ_SHOTGUN2,
-    MZ_HEATBEAM,
-    MZ_BLASTER2,
-    MZ_TRACKER,
-    MZ_NUKE1,
-    MZ_NUKE2,
-    MZ_NUKE4,
-    MZ_NUKE8,
+#define MZ_ETF_RIFLE        30
+#define MZ_UNUSED           31
+#define MZ_SHOTGUN2         32
+#define MZ_HEATBEAM         33
+#define MZ_BLASTER2         34
+#define MZ_TRACKER          35
+#define MZ_NUKE1            36
+#define MZ_NUKE2            37
+#define MZ_NUKE4            38
+#define MZ_NUKE8            39
 //ROGUE
-
-    MZ_SILENCED = 128,  // bit flag ORed with one of the above numbers
-};
-
-//
-// monster muzzle flashes
-//
-enum {
-    MZ2_TANK_BLASTER_1 = 1, MZ2_TANK_BLASTER_2, MZ2_TANK_BLASTER_3,
-    MZ2_TANK_MACHINEGUN_1, MZ2_TANK_MACHINEGUN_2, MZ2_TANK_MACHINEGUN_3,
-    MZ2_TANK_MACHINEGUN_4, MZ2_TANK_MACHINEGUN_5, MZ2_TANK_MACHINEGUN_6,
-    MZ2_TANK_MACHINEGUN_7, MZ2_TANK_MACHINEGUN_8, MZ2_TANK_MACHINEGUN_9,
-    MZ2_TANK_MACHINEGUN_10, MZ2_TANK_MACHINEGUN_11, MZ2_TANK_MACHINEGUN_12,
-    MZ2_TANK_MACHINEGUN_13, MZ2_TANK_MACHINEGUN_14, MZ2_TANK_MACHINEGUN_15,
-    MZ2_TANK_MACHINEGUN_16, MZ2_TANK_MACHINEGUN_17, MZ2_TANK_MACHINEGUN_18,
-    MZ2_TANK_MACHINEGUN_19, MZ2_TANK_ROCKET_1, MZ2_TANK_ROCKET_2,
-    MZ2_TANK_ROCKET_3, MZ2_INFANTRY_MACHINEGUN_1, MZ2_INFANTRY_MACHINEGUN_2,
-    MZ2_INFANTRY_MACHINEGUN_3, MZ2_INFANTRY_MACHINEGUN_4,
-    MZ2_INFANTRY_MACHINEGUN_5, MZ2_INFANTRY_MACHINEGUN_6,
-    MZ2_INFANTRY_MACHINEGUN_7, MZ2_INFANTRY_MACHINEGUN_8,
-    MZ2_INFANTRY_MACHINEGUN_9, MZ2_INFANTRY_MACHINEGUN_10,
-    MZ2_INFANTRY_MACHINEGUN_11, MZ2_INFANTRY_MACHINEGUN_12,
-    MZ2_INFANTRY_MACHINEGUN_13, MZ2_SOLDIER_BLASTER_1, MZ2_SOLDIER_BLASTER_2,
-    MZ2_SOLDIER_SHOTGUN_1, MZ2_SOLDIER_SHOTGUN_2, MZ2_SOLDIER_MACHINEGUN_1,
-    MZ2_SOLDIER_MACHINEGUN_2, MZ2_GUNNER_MACHINEGUN_1, MZ2_GUNNER_MACHINEGUN_2,
-    MZ2_GUNNER_MACHINEGUN_3, MZ2_GUNNER_MACHINEGUN_4, MZ2_GUNNER_MACHINEGUN_5,
-    MZ2_GUNNER_MACHINEGUN_6, MZ2_GUNNER_MACHINEGUN_7, MZ2_GUNNER_MACHINEGUN_8,
-    MZ2_GUNNER_GRENADE_1, MZ2_GUNNER_GRENADE_2, MZ2_GUNNER_GRENADE_3,
-    MZ2_GUNNER_GRENADE_4, MZ2_CHICK_ROCKET_1, MZ2_FLYER_BLASTER_1,
-    MZ2_FLYER_BLASTER_2, MZ2_MEDIC_BLASTER_1, MZ2_GLADIATOR_RAILGUN_1,
-    MZ2_HOVER_BLASTER_1, MZ2_ACTOR_MACHINEGUN_1, MZ2_SUPERTANK_MACHINEGUN_1,
-    MZ2_SUPERTANK_MACHINEGUN_2, MZ2_SUPERTANK_MACHINEGUN_3,
-    MZ2_SUPERTANK_MACHINEGUN_4, MZ2_SUPERTANK_MACHINEGUN_5,
-    MZ2_SUPERTANK_MACHINEGUN_6, MZ2_SUPERTANK_ROCKET_1, MZ2_SUPERTANK_ROCKET_2,
-    MZ2_SUPERTANK_ROCKET_3, MZ2_BOSS2_MACHINEGUN_L1, MZ2_BOSS2_MACHINEGUN_L2,
-    MZ2_BOSS2_MACHINEGUN_L3, MZ2_BOSS2_MACHINEGUN_L4, MZ2_BOSS2_MACHINEGUN_L5,
-    MZ2_BOSS2_ROCKET_1, MZ2_BOSS2_ROCKET_2, MZ2_BOSS2_ROCKET_3,
-    MZ2_BOSS2_ROCKET_4, MZ2_FLOAT_BLASTER_1, MZ2_SOLDIER_BLASTER_3,
-    MZ2_SOLDIER_SHOTGUN_3, MZ2_SOLDIER_MACHINEGUN_3, MZ2_SOLDIER_BLASTER_4,
-    MZ2_SOLDIER_SHOTGUN_4, MZ2_SOLDIER_MACHINEGUN_4, MZ2_SOLDIER_BLASTER_5,
-    MZ2_SOLDIER_SHOTGUN_5, MZ2_SOLDIER_MACHINEGUN_5, MZ2_SOLDIER_BLASTER_6,
-    MZ2_SOLDIER_SHOTGUN_6, MZ2_SOLDIER_MACHINEGUN_6, MZ2_SOLDIER_BLASTER_7,
-    MZ2_SOLDIER_SHOTGUN_7, MZ2_SOLDIER_MACHINEGUN_7, MZ2_SOLDIER_BLASTER_8,
-    MZ2_SOLDIER_SHOTGUN_8, MZ2_SOLDIER_MACHINEGUN_8,
-
-// --- Xian shit below ---
-    MZ2_MAKRON_BFG, MZ2_MAKRON_BLASTER_1, MZ2_MAKRON_BLASTER_2,
-    MZ2_MAKRON_BLASTER_3, MZ2_MAKRON_BLASTER_4, MZ2_MAKRON_BLASTER_5,
-    MZ2_MAKRON_BLASTER_6, MZ2_MAKRON_BLASTER_7, MZ2_MAKRON_BLASTER_8,
-    MZ2_MAKRON_BLASTER_9, MZ2_MAKRON_BLASTER_10, MZ2_MAKRON_BLASTER_11,
-    MZ2_MAKRON_BLASTER_12, MZ2_MAKRON_BLASTER_13, MZ2_MAKRON_BLASTER_14,
-    MZ2_MAKRON_BLASTER_15, MZ2_MAKRON_BLASTER_16, MZ2_MAKRON_BLASTER_17,
-    MZ2_MAKRON_RAILGUN_1, MZ2_JORG_MACHINEGUN_L1, MZ2_JORG_MACHINEGUN_L2,
-    MZ2_JORG_MACHINEGUN_L3, MZ2_JORG_MACHINEGUN_L4, MZ2_JORG_MACHINEGUN_L5,
-    MZ2_JORG_MACHINEGUN_L6, MZ2_JORG_MACHINEGUN_R1, MZ2_JORG_MACHINEGUN_R2,
-    MZ2_JORG_MACHINEGUN_R3, MZ2_JORG_MACHINEGUN_R4, MZ2_JORG_MACHINEGUN_R5,
-    MZ2_JORG_MACHINEGUN_R6, MZ2_JORG_BFG_1, MZ2_BOSS2_MACHINEGUN_R1,
-    MZ2_BOSS2_MACHINEGUN_R2, MZ2_BOSS2_MACHINEGUN_R3, MZ2_BOSS2_MACHINEGUN_R4,
-    MZ2_BOSS2_MACHINEGUN_R5,
-
-//ROGUE
-    MZ2_CARRIER_MACHINEGUN_L1, MZ2_CARRIER_MACHINEGUN_R1, MZ2_CARRIER_GRENADE,
-    MZ2_TURRET_MACHINEGUN, MZ2_TURRET_ROCKET, MZ2_TURRET_BLASTER,
-    MZ2_STALKER_BLASTER, MZ2_DAEDALUS_BLASTER, MZ2_MEDIC_BLASTER_2,
-    MZ2_CARRIER_RAILGUN, MZ2_WIDOW_DISRUPTOR, MZ2_WIDOW_BLASTER,
-    MZ2_WIDOW_RAIL, MZ2_WIDOW_PLASMABEAM, MZ2_CARRIER_MACHINEGUN_L2,
-    MZ2_CARRIER_MACHINEGUN_R2, MZ2_WIDOW_RAIL_LEFT, MZ2_WIDOW_RAIL_RIGHT,
-    MZ2_WIDOW_BLASTER_SWEEP1, MZ2_WIDOW_BLASTER_SWEEP2,
-    MZ2_WIDOW_BLASTER_SWEEP3, MZ2_WIDOW_BLASTER_SWEEP4,
-    MZ2_WIDOW_BLASTER_SWEEP5, MZ2_WIDOW_BLASTER_SWEEP6,
-    MZ2_WIDOW_BLASTER_SWEEP7, MZ2_WIDOW_BLASTER_SWEEP8,
-    MZ2_WIDOW_BLASTER_SWEEP9, MZ2_WIDOW_BLASTER_100, MZ2_WIDOW_BLASTER_90,
-    MZ2_WIDOW_BLASTER_80, MZ2_WIDOW_BLASTER_70, MZ2_WIDOW_BLASTER_60,
-    MZ2_WIDOW_BLASTER_50, MZ2_WIDOW_BLASTER_40, MZ2_WIDOW_BLASTER_30,
-    MZ2_WIDOW_BLASTER_20, MZ2_WIDOW_BLASTER_10, MZ2_WIDOW_BLASTER_0,
-    MZ2_WIDOW_BLASTER_10L, MZ2_WIDOW_BLASTER_20L, MZ2_WIDOW_BLASTER_30L,
-    MZ2_WIDOW_BLASTER_40L, MZ2_WIDOW_BLASTER_50L, MZ2_WIDOW_BLASTER_60L,
-    MZ2_WIDOW_BLASTER_70L, MZ2_WIDOW_RUN_1, MZ2_WIDOW_RUN_2, MZ2_WIDOW_RUN_3,
-    MZ2_WIDOW_RUN_4, MZ2_WIDOW_RUN_5, MZ2_WIDOW_RUN_6, MZ2_WIDOW_RUN_7,
-    MZ2_WIDOW_RUN_8, MZ2_CARRIER_ROCKET_1, MZ2_CARRIER_ROCKET_2,
-    MZ2_CARRIER_ROCKET_3, MZ2_CARRIER_ROCKET_4, MZ2_WIDOW2_BEAMER_1,
-    MZ2_WIDOW2_BEAMER_2, MZ2_WIDOW2_BEAMER_3, MZ2_WIDOW2_BEAMER_4,
-    MZ2_WIDOW2_BEAMER_5, MZ2_WIDOW2_BEAM_SWEEP_1, MZ2_WIDOW2_BEAM_SWEEP_2,
-    MZ2_WIDOW2_BEAM_SWEEP_3, MZ2_WIDOW2_BEAM_SWEEP_4, MZ2_WIDOW2_BEAM_SWEEP_5,
-    MZ2_WIDOW2_BEAM_SWEEP_6, MZ2_WIDOW2_BEAM_SWEEP_7, MZ2_WIDOW2_BEAM_SWEEP_8,
-    MZ2_WIDOW2_BEAM_SWEEP_9, MZ2_WIDOW2_BEAM_SWEEP_10,
-    MZ2_WIDOW2_BEAM_SWEEP_11,
-//ROGUE
-};
-
-extern const vec3_t monster_flash_offset[256];
-
 
 // temp entity events
 //
@@ -1175,6 +1070,7 @@ typedef enum {
 #define UF_MUTE_OBSERVERS   16
 #define UF_MUTE_MISC        32
 #define UF_PLAYERFOV        64
+#define UF_EXTENDED_LAYOUT  128
 
 /*
 ==========================================================
@@ -1304,3 +1200,5 @@ typedef struct {
 
     short       stats[MAX_STATS];       // fast status bar updates
 } player_state_t;
+
+#endif // SHARED_H

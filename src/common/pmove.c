@@ -920,6 +920,8 @@ On exit, the origin will have a value that is pre-quantized to the 0.125
 precision of the network channel and in a valid position.
 ================
 */
+#define q_round(vel) ((vel - floor(vel)) >= 0.5 ? (int)(vel+1) : (int)(vel))
+
 static void PM_SnapPosition(void)
 {
     int     sign[3];
@@ -930,7 +932,7 @@ static void PM_SnapPosition(void)
 
     // snap velocity to eigths
     for (i = 0; i < 3; i++)
-        pm->s.velocity[i] = (int)(pml.velocity[i] * 8);
+        pm->s.velocity[i] = q_round(pml.velocity[i] * 8);
 
     for (i = 0; i < 3; i++) {
         if (pml.origin[i] >= 0)
