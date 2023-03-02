@@ -175,6 +175,8 @@ typedef struct client_state_s {
     entity_state_t  entityStates[MAX_PARSE_ENTITIES];
     int             numEntityStates;
 
+	entity_state_t  csEntities[MAX_EDICTS];
+
     msgEsFlags_t    esFlags;
 
     server_frame_t  frames[UPDATE_BACKUP];

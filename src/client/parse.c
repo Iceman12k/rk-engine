@@ -57,6 +57,33 @@ static inline void CL_ParseDeltaEntity(server_frame_t  *frame,
         VectorCopy(old->origin, state->old_origin);
 }
 
+static void CL_ParseEntites(server_frame_t *oldframe, server_frame_t *frame)
+{
+	int i;
+	while (1)
+	{
+		int bits;
+		i = MSG_ParseEntityBits(&bits);
+		//i = MSG_ReadShort();
+
+		if (i == 0x7FFF)
+			break;
+
+		Q_assert(i < MAX_EDICTS); // this should be valid...
+		entity_state_t *oldent = &cl.csEntities[i];
+		entity_state_t ent = *oldent;
+
+		MSG_ParseEntity_RK(oldent, &ent, i, bits);
+		//memcpy(&ent, MSG_ReadData(sizeof(entity_packed_t)), sizeof(entity_packed_t));
+		//ent = *((entity_state_t*)MSG_ReadData(sizeof(entity_state_t)));
+
+		if (i == cl.clientNum)
+			ent.solid = 0;
+
+		cl.csEntities[i] = ent;
+	}
+}
+
 static void CL_ParsePacketEntities(server_frame_t *oldframe,
                                    server_frame_t *frame)
 {
@@ -347,7 +374,10 @@ static void CL_ParseFrame(int extrabits)
 
     SHOWNET(2, "%3zu:packetentities\n", msg_read.readcount - 1);
 
-    CL_ParsePacketEntities(oldframe, &frame);
+	if (cls.serverProtocol == PROTOCOL_VERSION_RK)
+		CL_ParseEntites(oldframe, &frame);
+	else
+		CL_ParsePacketEntities(oldframe, &frame);
 
     // save the frame off in the backup array for later delta comparisons
     cl.frames[currentframe & UPDATE_MASK] = frame;

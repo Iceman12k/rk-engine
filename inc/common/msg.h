@@ -108,6 +108,7 @@ int     MSG_WriteDeltaUsercmd_Enhanced(const usercmd_t *from, const usercmd_t *c
 #endif
 void    MSG_WriteDir(const vec3_t vector);
 void    MSG_PackEntity(entity_packed_t *out, const entity_state_t *in, bool short_angles);
+int		MSG_WriteEntity(const entity_packed_t *from, const entity_packed_t *to);
 void    MSG_WriteDeltaEntity(const entity_packed_t *from, const entity_packed_t *to, msgEsFlags_t flags);
 void    MSG_PackPlayer(player_packed_t *out, const player_state_t *in);
 void    MSG_WriteDeltaPlayerstate_Default(const player_packed_t *from, const player_packed_t *to);
@@ -144,6 +145,7 @@ int     MSG_ReadBits(int bits);
 void    MSG_ReadDeltaUsercmd(const usercmd_t *from, usercmd_t *cmd);
 void    MSG_ReadDeltaUsercmd_Hacked(const usercmd_t *from, usercmd_t *to);
 void    MSG_ReadDeltaUsercmd_Enhanced(const usercmd_t *from, usercmd_t *to);
+void	MSG_ParseEntity_RK(const entity_state_t *from, entity_state_t *to, int number, int bits);
 int     MSG_ParseEntityBits(int *bits);
 void    MSG_ParseDeltaEntity(const entity_state_t *from, entity_state_t *to, int number, int bits, msgEsFlags_t flags);
 #if USE_CLIENT

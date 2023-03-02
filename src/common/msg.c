@@ -502,6 +502,217 @@ void MSG_PackEntity(entity_packed_t *out, const entity_state_t *in, bool short_a
     out->event = in->event;
 }
 
+int MSG_WriteEntity(const entity_packed_t *from, const entity_packed_t *to)
+{
+	int    bits, mask;
+
+	if (!to) {
+		return 0; // remove entity
+	}
+
+	//Q_assert(to->number > 0 && to->number < MAX_EDICTS);
+
+	if (!from)
+		from = &nullEntityState;
+	
+	if (memcmp(from, to, sizeof(entity_packed_t)))
+		return 0;
+
+	// send an update
+	bits = 0;
+
+	if (to->origin[0] != from->origin[0])
+		bits |= U_ORIGIN1;
+	if (to->origin[1] != from->origin[1])
+		bits |= U_ORIGIN2;
+	if (to->origin[2] != from->origin[2])
+		bits |= U_ORIGIN3;
+
+	if (to->angles[0] != from->angles[0])
+		bits |= U_ANGLE1 | U_ANGLE16;
+	if (to->angles[1] != from->angles[1])
+		bits |= U_ANGLE2 | U_ANGLE16;
+	if (to->angles[2] != from->angles[2])
+		bits |= U_ANGLE3 | U_ANGLE16;
+
+	if (!VectorCompare(to->old_origin, from->origin))
+		bits |= U_OLDORIGIN;
+
+	mask = 0xffff0000;
+
+	if (to->skinnum != from->skinnum) {
+		if (to->skinnum & mask)
+			bits |= U_SKIN8 | U_SKIN16;
+		else if (to->skinnum & 0x0000ff00)
+			bits |= U_SKIN16;
+		else
+			bits |= U_SKIN8;
+	}
+
+	if (to->frame != from->frame) {
+		if (to->frame & 0xff00)
+			bits |= U_FRAME16;
+		else
+			bits |= U_FRAME8;
+	}
+
+	if (to->effects != from->effects) {
+		if (to->effects & mask)
+			bits |= U_EFFECTS8 | U_EFFECTS16;
+		else if (to->effects & 0x0000ff00)
+			bits |= U_EFFECTS16;
+		else
+			bits |= U_EFFECTS8;
+	}
+
+	if (to->renderfx != from->renderfx) {
+		if (to->renderfx & mask)
+			bits |= U_RENDERFX8 | U_RENDERFX16;
+		else if (to->renderfx & 0x0000ff00)
+			bits |= U_RENDERFX16;
+		else
+			bits |= U_RENDERFX8;
+	}
+
+	if (to->solid != from->solid)
+		bits |= U_SOLID;
+
+	// event is not delta compressed, just 0 compressed
+	if (to->event)
+		bits |= U_EVENT;
+
+	if (to->modelindex != from->modelindex)
+		bits |= U_MODEL;
+	if (to->modelindex2 != from->modelindex2)
+		bits |= U_MODEL2;
+	if (to->modelindex3 != from->modelindex3)
+		bits |= U_MODEL3;
+	if (to->modelindex4 != from->modelindex4)
+		bits |= U_MODEL4;
+
+	if (to->sound != from->sound)
+		bits |= U_SOUND;
+
+	if (to->renderfx & RF_FRAMELERP) {
+		if (!VectorCompare(to->old_origin, from->origin))
+			bits |= U_OLDORIGIN;
+	}
+	else if (to->renderfx & RF_BEAM) {
+		if (!VectorCompare(to->old_origin, from->old_origin))
+			bits |= U_OLDORIGIN;
+	}
+
+	//
+	// write the message
+	//
+
+	if (to->number & 0xff00)
+		bits |= U_NUMBER16;     // number8 is implicit otherwise
+
+	if (bits & 0xff000000)
+		bits |= U_MOREBITS3 | U_MOREBITS2 | U_MOREBITS1;
+	else if (bits & 0x00ff0000)
+		bits |= U_MOREBITS2 | U_MOREBITS1;
+	else if (bits & 0x0000ff00)
+		bits |= U_MOREBITS1;
+
+	MSG_WriteByte(bits & 255);
+
+	if (bits & 0xff000000) {
+		MSG_WriteByte((bits >> 8) & 255);
+		MSG_WriteByte((bits >> 16) & 255);
+		MSG_WriteByte((bits >> 24) & 255);
+	}
+	else if (bits & 0x00ff0000) {
+		MSG_WriteByte((bits >> 8) & 255);
+		MSG_WriteByte((bits >> 16) & 255);
+	}
+	else if (bits & 0x0000ff00) {
+		MSG_WriteByte((bits >> 8) & 255);
+	}
+
+	//----------
+
+	if (bits & U_NUMBER16)
+		MSG_WriteShort(to->number);
+	else
+		MSG_WriteByte(to->number);
+
+	if (bits & U_MODEL)
+		MSG_WriteByte(to->modelindex);
+	if (bits & U_MODEL2)
+		MSG_WriteByte(to->modelindex2);
+	if (bits & U_MODEL3)
+		MSG_WriteByte(to->modelindex3);
+	if (bits & U_MODEL4)
+		MSG_WriteByte(to->modelindex4);
+
+	if (bits & U_FRAME8)
+		MSG_WriteByte(to->frame);
+	else if (bits & U_FRAME16)
+		MSG_WriteShort(to->frame);
+
+	if ((bits & (U_SKIN8 | U_SKIN16)) == (U_SKIN8 | U_SKIN16))  //used for laser colors
+		MSG_WriteLong(to->skinnum);
+	else if (bits & U_SKIN8)
+		MSG_WriteByte(to->skinnum);
+	else if (bits & U_SKIN16)
+		MSG_WriteShort(to->skinnum);
+
+	if ((bits & (U_EFFECTS8 | U_EFFECTS16)) == (U_EFFECTS8 | U_EFFECTS16))
+		MSG_WriteLong(to->effects);
+	else if (bits & U_EFFECTS8)
+		MSG_WriteByte(to->effects);
+	else if (bits & U_EFFECTS16)
+		MSG_WriteShort(to->effects);
+
+	if ((bits & (U_RENDERFX8 | U_RENDERFX16)) == (U_RENDERFX8 | U_RENDERFX16))
+		MSG_WriteLong(to->renderfx);
+	else if (bits & U_RENDERFX8)
+		MSG_WriteByte(to->renderfx);
+	else if (bits & U_RENDERFX16)
+		MSG_WriteShort(to->renderfx);
+
+	if (bits & U_ORIGIN1)
+		MSG_WriteShort(to->origin[0]);
+	if (bits & U_ORIGIN2)
+		MSG_WriteShort(to->origin[1]);
+	if (bits & U_ORIGIN3)
+		MSG_WriteShort(to->origin[2]);
+
+	if (bits & U_ANGLE16) {
+		if (bits & U_ANGLE1)
+			MSG_WriteShort(to->angles[0]);
+		if (bits & U_ANGLE2)
+			MSG_WriteShort(to->angles[1]);
+		if (bits & U_ANGLE3)
+			MSG_WriteShort(to->angles[2]);
+	}
+	else {
+		if (bits & U_ANGLE1)
+			MSG_WriteByte(to->angles[0] >> 8);
+		if (bits & U_ANGLE2)
+			MSG_WriteByte(to->angles[1] >> 8);
+		if (bits & U_ANGLE3)
+			MSG_WriteByte(to->angles[2] >> 8);
+	}
+
+	if (bits & U_OLDORIGIN) {
+		MSG_WriteShort(to->old_origin[0]);
+		MSG_WriteShort(to->old_origin[1]);
+		MSG_WriteShort(to->old_origin[2]);
+	}
+
+	if (bits & U_SOUND)
+		MSG_WriteByte(to->sound);
+	if (bits & U_EVENT)
+		MSG_WriteByte(to->event);
+	if (bits & U_SOLID)
+		MSG_WriteLong(to->solid);
+
+	return bits;
+}
+
 void MSG_WriteDeltaEntity(const entity_packed_t *from,
                           const entity_packed_t *to,
                           msgEsFlags_t          flags)
@@ -1769,6 +1980,110 @@ void MSG_ReadDeltaUsercmd_Enhanced(const usercmd_t *from, usercmd_t *to)
 }
 
 #if USE_CLIENT || USE_MVD_CLIENT
+
+
+void MSG_ParseEntity_RK(const entity_state_t *from, entity_state_t *to, int number, int bits)
+{
+	Q_assert(to);
+	Q_assert(number > 0 && number < MAX_EDICTS);
+
+	// set everything to the state we are delta'ing from
+	if (!from) {
+		memset(to, 0, sizeof(*to));
+	}
+	else if (to != from) {
+		memcpy(to, from, sizeof(*to));
+	}
+
+	to->number = number;
+	to->event = 0;
+
+	if (!bits) {
+		return;
+	}
+
+	if (bits & U_MODEL) {
+		to->modelindex = MSG_ReadByte();
+	}
+	if (bits & U_MODEL2) {
+		to->modelindex2 = MSG_ReadByte();
+	}
+	if (bits & U_MODEL3) {
+		to->modelindex3 = MSG_ReadByte();
+	}
+	if (bits & U_MODEL4) {
+		to->modelindex4 = MSG_ReadByte();
+	}
+
+	if (bits & U_FRAME8)
+		to->frame = MSG_ReadByte();
+	if (bits & U_FRAME16)
+		to->frame = MSG_ReadShort();
+
+	if ((bits & (U_SKIN8 | U_SKIN16)) == (U_SKIN8 | U_SKIN16))  //used for laser colors
+		to->skinnum = MSG_ReadLong();
+	else if (bits & U_SKIN8)
+		to->skinnum = MSG_ReadByte();
+	else if (bits & U_SKIN16)
+		to->skinnum = MSG_ReadWord();
+
+	if ((bits & (U_EFFECTS8 | U_EFFECTS16)) == (U_EFFECTS8 | U_EFFECTS16))
+		to->effects = MSG_ReadLong();
+	else if (bits & U_EFFECTS8)
+		to->effects = MSG_ReadByte();
+	else if (bits & U_EFFECTS16)
+		to->effects = MSG_ReadWord();
+
+	if ((bits & (U_RENDERFX8 | U_RENDERFX16)) == (U_RENDERFX8 | U_RENDERFX16))
+		to->renderfx = MSG_ReadLong();
+	else if (bits & U_RENDERFX8)
+		to->renderfx = MSG_ReadByte();
+	else if (bits & U_RENDERFX16)
+		to->renderfx = MSG_ReadWord();
+
+	if (bits & U_ORIGIN1) {
+		to->origin[0] = MSG_ReadCoord();
+	}
+	if (bits & U_ORIGIN2) {
+		to->origin[1] = MSG_ReadCoord();
+	}
+	if (bits & U_ORIGIN3) {
+		to->origin[2] = MSG_ReadCoord();
+	}
+
+	if (bits & U_ANGLE16) {
+		if (bits & U_ANGLE1)
+			to->angles[0] = MSG_ReadAngle16();
+		if (bits & U_ANGLE2)
+			to->angles[1] = MSG_ReadAngle16();
+		if (bits & U_ANGLE3)
+			to->angles[2] = MSG_ReadAngle16();
+	}
+	else {
+		if (bits & U_ANGLE1)
+			to->angles[0] = MSG_ReadAngle();
+		if (bits & U_ANGLE2)
+			to->angles[1] = MSG_ReadAngle();
+		if (bits & U_ANGLE3)
+			to->angles[2] = MSG_ReadAngle();
+	}
+
+	if (bits & U_OLDORIGIN) {
+		MSG_ReadPos(to->old_origin);
+	}
+
+	if (bits & U_SOUND) {
+		to->sound = MSG_ReadByte();
+	}
+
+	if (bits & U_EVENT) {
+		to->event = MSG_ReadByte();
+	}
+
+	if (bits & U_SOLID) {
+		to->solid = MSG_ReadLong();
+	}
+}
 
 /*
 =================

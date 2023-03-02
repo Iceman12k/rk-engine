@@ -107,6 +107,7 @@ typedef struct {
     byte        areabits[MAX_MAP_AREA_BYTES];  // portalarea visibility bits
     unsigned    sentTime;                   // for ping calculations
     int         latency;
+	entity_state_t svEntities[MAX_EDICTS];
 } client_frame_t;
 
 typedef struct {

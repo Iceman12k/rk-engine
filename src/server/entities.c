@@ -48,6 +48,62 @@ static void SV_SendDeltaEntity(edict_t *old, edict_t *new, msgEsFlags_t flags)
 	MSG_WriteDeltaEntity(&old_pack, &new_pack, flags);
 }
 
+static void SV_SendEntities(client_t *client, client_frame_t *from, client_frame_t *to, int clientEntityNum)
+{
+	qboolean written;
+	int i;
+
+	written = false;
+
+	for (i = 0; i < ge->num_edicts; i++)
+	{
+		entity_state_t *oldent;
+		entity_state_t ent;
+		entity_packed_t *oldp;
+		entity_packed_t *entp;
+		edict_t *edict;
+		int bits;
+
+		// generate new snapshot
+		edict = EDICT_NUM(i);
+		if (edict->inuse)
+			ent = edict->s;
+		else
+		{
+			memset(&ent, 0, sizeof(ent));
+			ent.number = i;
+		}
+		//
+
+		//if (ent.number == 0)
+		
+		oldent = NULL;
+		if (from)
+		{
+			oldent = &from->svEntities[i];
+			MSG_PackEntity(oldp, oldent, true);
+		}
+
+		if (edict->svflags & SVF_NOCLIENT)
+		{
+			memset(&ent, 0, sizeof(ent));
+			ent.number = i;
+		}
+
+		MSG_PackEntity(entp, &ent, true);
+
+		//MSG_WriteShort(i);
+		//MSG_WriteData(&ent, sizeof(entity_state_t));
+		//bits = MSG_WriteEntity(from ? oldp : NULL, entp);
+
+		// update current frame to be our snapshot
+		to->svEntities[i] = ent;
+	}
+
+	MSG_WriteShort(U_MOREBITS1 | U_NUMBER16);
+	MSG_WriteShort(0x7FFF);
+}
+
 static void SV_EmitPacketEntities(client_t         *client,
                                   client_frame_t   *from,
                                   client_frame_t   *to,
@@ -416,7 +472,8 @@ void SV_WriteFrameToClient_RK(client_t *client)
 	client->frameflags = 0;
 
 	// delta encode the entities
-	SV_EmitPacketEntities(client, oldframe, frame, clientEntityNum);
+	//SV_EmitPacketEntities(client, oldframe, frame, clientEntityNum);
+	SV_SendEntities(client, oldframe, frame, clientEntityNum);
 }
 
 /*

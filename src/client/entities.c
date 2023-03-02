@@ -366,9 +366,10 @@ void CL_DeltaFrame(void)
     ent = &cl_entities[cl.frame.clientNum + 1];
     Com_PlayerToEntityState(&cl.frame.ps, &ent->current);
 
-    for (i = 0; i < cl.frame.numEntities; i++) {
-        j = (cl.frame.firstEntity + i) & PARSE_ENTITIES_MASK;
-        state = &cl.entityStates[j];
+	for (j = 0; j < MAX_EDICTS; j++) {
+        //j = (cl.frame.firstEntity + i) & PARSE_ENTITIES_MASK;
+        //state = &cl.entityStates[j];
+		state = &cl.csEntities[j];
 
         // set current and prev
         parse_entity_update(state);
@@ -470,9 +471,13 @@ static void CL_AddPacketEntities(void)
 
     memset(&ent, 0, sizeof(ent));
 
-    for (pnum = 0; pnum < cl.frame.numEntities; pnum++) {
-        i = (cl.frame.firstEntity + pnum) & PARSE_ENTITIES_MASK;
-        s1 = &cl.entityStates[i];
+    //for (pnum = 0; pnum < cl.frame.numEntities; pnum++) {
+        //i = (cl.frame.firstEntity + pnum) & PARSE_ENTITIES_MASK;
+	for (i = 0; i < MAX_EDICTS; i++) {
+        s1 = &cl.csEntities[i];
+
+		if (s1->number == 0)
+			continue;
 
         cent = &cl_entities[s1->number];
 
