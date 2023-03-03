@@ -88,6 +88,7 @@ static void CL_ParseEntites(server_frame_t *oldframe, server_frame_t *frame)
 		entity_state_t *oldent = &cl.csEntities[i];
 		entity_state_t ent = *oldent;
 		ent.number = i;
+		ent.event = 0;
 
 		MSG_ReadEntity(&ent, bits);
 		//MSG_ParseEntity_RK(oldent, &ent, i, bits);

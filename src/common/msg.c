@@ -536,7 +536,7 @@ int MSG_EntityDeltaBits(const entity_state_t *old, const entity_state_t *new)
 	if (old->sound != new->sound)
 		bits |= U_SOUND;
 	
-	if (old->event != new->event)
+	if (new->event)
 		bits |= U_EVENT;
 
 	// add morebits stuff
