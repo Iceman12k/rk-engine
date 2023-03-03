@@ -53,11 +53,12 @@ static void SV_SendEntities(client_t *client, client_frame_t *from, client_frame
 	qboolean written;
 	int i;
 
-	written = false;
+	MSG_WriteByte(svc_deltapacketentities);
 
+	written = false;
 	for (i = 0; i < ge->num_edicts; i++)
 	{
-		entity_state_t *oldent;
+		entity_state_t oldent;
 		entity_state_t ent;
 		entity_packed_t *oldp;
 		entity_packed_t *entp;
@@ -66,7 +67,7 @@ static void SV_SendEntities(client_t *client, client_frame_t *from, client_frame
 
 		// generate new snapshot
 		edict = EDICT_NUM(i);
-		if (edict->inuse)
+		if (edict->inuse && !(edict->svflags & SVF_NOCLIENT))
 			ent = edict->s;
 		else
 		{
@@ -77,21 +78,16 @@ static void SV_SendEntities(client_t *client, client_frame_t *from, client_frame
 
 		//if (ent.number == 0)
 		
-		oldent = NULL;
 		if (from)
-		{
-			oldent = &from->svEntities[i];
-			MSG_PackEntity(oldp, oldent, true);
-		}
+			oldent = from->svEntities[i];
+		else
+			memset(&oldent, 0, sizeof(oldent));
 
-		if (edict->svflags & SVF_NOCLIENT)
-		{
-			memset(&ent, 0, sizeof(ent));
-			ent.number = i;
-		}
+		//MSG_PackEntity(entp, &ent, true);
 
-		MSG_PackEntity(entp, &ent, true);
-
+		written = true;
+		bits = MSG_EntityDeltaBits(&oldent, &ent);
+		MSG_WriteEntity(&ent, bits);
 		//MSG_WriteShort(i);
 		//MSG_WriteData(&ent, sizeof(entity_state_t));
 		//bits = MSG_WriteEntity(from ? oldp : NULL, entp);
@@ -100,8 +96,16 @@ static void SV_SendEntities(client_t *client, client_frame_t *from, client_frame
 		to->svEntities[i] = ent;
 	}
 
-	MSG_WriteShort(U_MOREBITS1 | U_NUMBER16);
-	MSG_WriteShort(0x7FFF);
+	if (written)
+	{
+		MSG_WriteShort(U_MOREBITS1 | U_NUMBER16);
+		MSG_WriteShort(0x7FFF);
+	}
+	else
+	{
+		msg_write.cursize--;
+		MSG_WriteByte(svc_nop);
+	}
 }
 
 static void SV_EmitPacketEntities(client_t         *client,

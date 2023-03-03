@@ -467,78 +467,228 @@ void MSG_WriteDir(const vec3_t dir)
     MSG_WriteByte(best);
 }
 
-void MSG_PackEntity(entity_packed_t *out, const entity_state_t *in, bool short_angles)
+int MSG_EntityDeltaBits(const entity_state_t *old, const entity_state_t *new)
 {
-    // allow 0 to accomodate empty baselines
-    Q_assert(in->number >= 0 && in->number < MAX_EDICTS);
-    out->number = in->number;
-    out->origin[0] = COORD2SHORT(in->origin[0]);
-    out->origin[1] = COORD2SHORT(in->origin[1]);
-    out->origin[2] = COORD2SHORT(in->origin[2]);
-    if (short_angles) {
-        out->angles[0] = ANGLE2SHORT(in->angles[0]);
-        out->angles[1] = ANGLE2SHORT(in->angles[1]);
-        out->angles[2] = ANGLE2SHORT(in->angles[2]);
-    } else {
-        // pack angles8 akin to angles16 to make delta compression happy when
-        // precision suddenly changes between entity updates
-        out->angles[0] = ANGLE2BYTE(in->angles[0]) << 8;
-        out->angles[1] = ANGLE2BYTE(in->angles[1]) << 8;
-        out->angles[2] = ANGLE2BYTE(in->angles[2]) << 8;
-    }
-    out->old_origin[0] = COORD2SHORT(in->old_origin[0]);
-    out->old_origin[1] = COORD2SHORT(in->old_origin[1]);
-    out->old_origin[2] = COORD2SHORT(in->old_origin[2]);
-    out->modelindex = in->modelindex;
-    out->modelindex2 = in->modelindex2;
-    out->modelindex3 = in->modelindex3;
-    out->modelindex4 = in->modelindex4;
-    out->skinnum = in->skinnum;
-    out->effects = in->effects;
-    out->renderfx = in->renderfx;
-    out->solid = in->solid;
-    out->frame = in->frame;
-    out->sound = in->sound;
-    out->event = in->event;
-}
+	int bits;
 
-int MSG_WriteEntity(const entity_packed_t *from, const entity_packed_t *to)
-{
-	int    bits, mask;
+	bits = 0;
+	if (new->number > 0xFF)
+		bits = U_NUMBER16;
 
-	if (!to) {
-		return 0; // remove entity
+	if (old->origin[0] != new->origin[0])
+		bits |= U_ORIGIN1;
+	if (old->origin[1] != new->origin[1])
+		bits |= U_ORIGIN2;
+	if (old->origin[2] != new->origin[2])
+		bits |= U_ORIGIN3;
+
+	if (old->angles[0] != new->angles[0])
+		bits |= U_ANGLE1;
+	if (old->angles[1] != new->angles[1])
+		bits |= U_ANGLE2;
+	if (old->angles[2] != new->angles[2])
+		bits |= U_ANGLE3;
+
+	if (old->modelindex != new->modelindex)
+		bits |= U_MODEL;
+	if (old->modelindex2 != new->modelindex2)
+		bits |= U_MODEL2;
+	if (old->modelindex3 != new->modelindex3)
+		bits |= U_MODEL3;
+	if (old->modelindex4 != new->modelindex4)
+		bits |= U_MODEL4;
+
+	if (old->frame != new->frame)
+	{
+		if (new->frame > 0xFF)
+			bits |= U_FRAME16;
+		else
+			bits |= U_FRAME8;
 	}
 
-	//Q_assert(to->number > 0 && to->number < MAX_EDICTS);
+	if (old->skinnum != new->skinnum)
+	{
+		if (new->skinnum > 0xFF)
+			bits |= U_SKIN16;
+		else
+			bits |= U_SKIN8;
+	}
+
+	if (old->effects != new->effects)
+	{
+		if (new->effects > 0xFF)
+			bits |= U_EFFECTS16;
+		else
+			bits |= U_EFFECTS8;
+	}
+
+	if (old->renderfx != new->renderfx)
+	{
+		if (new->renderfx > 0xFF)
+			bits |= U_RENDERFX16;
+		else
+			bits |= U_RENDERFX8;
+	}
+
+	if (old->solid != new->solid)
+		bits |= U_SOLID;
+
+	if (old->sound != new->sound)
+		bits |= U_SOUND;
+	
+	if (old->event != new->event)
+		bits |= U_EVENT;
+
+	// add morebits stuff
+	if (bits > 0xFF)
+		bits |= U_MOREBITS1;
+	if (bits > 0xFFFF)
+		bits |= U_MOREBITS2;
+	if (bits > 0xFFFFFF)
+		bits |= U_MOREBITS3;
+
+	return bits;
+}
+
+void MSG_WriteEntity(const entity_state_t *ent, int bits)
+{
+	MSG_WriteByte(bits & 0xFF);
+	if (bits & U_MOREBITS1)
+		MSG_WriteByte((bits >> 8) & 0xFF);
+	if (bits & U_MOREBITS2)
+		MSG_WriteByte((bits >> 16) & 0xFF);
+	if (bits & U_MOREBITS3)
+		MSG_WriteByte((bits >> 24) & 0xFF);
+
+	if (bits & U_NUMBER16)
+		MSG_WriteShort(ent->number);
+	else
+		MSG_WriteByte(ent->number);
+	
+	if (bits & U_ORIGIN1)
+		MSG_WriteShort(COORD2SHORT(ent->origin[0]));		// 2
+	if (bits & U_ORIGIN2)
+		MSG_WriteShort(COORD2SHORT(ent->origin[1]));		// 4
+	if (bits & U_ORIGIN3)
+		MSG_WriteShort(COORD2SHORT(ent->origin[2]));		// 6
+
+	if (bits & U_ANGLE1)
+		MSG_WriteShort(ANGLE2SHORT(ent->angles[0]));		// 8
+	if (bits & U_ANGLE2)
+		MSG_WriteShort(ANGLE2SHORT(ent->angles[1]));		// 10
+	if (bits & U_ANGLE3)
+		MSG_WriteShort(ANGLE2SHORT(ent->angles[2]));		// 12
+
+	if (bits & U_MODEL)
+		MSG_WriteShort(ent->modelindex);					// 14
+	if (bits & U_MODEL2)
+		MSG_WriteShort(ent->modelindex2);					// 16
+	if (bits & U_MODEL3)
+		MSG_WriteShort(ent->modelindex3);					// 18
+	if (bits & U_MODEL4)
+		MSG_WriteShort(ent->modelindex4);					// 20
+
+	if (bits & U_FRAME16)
+		MSG_WriteShort(ent->frame);							// 22
+	else if (bits & U_FRAME8)
+		MSG_WriteByte(ent->frame);
+
+	if (bits & U_SKIN16)
+		MSG_WriteShort(ent->skinnum);						// 24
+	else if (bits & U_SKIN8)
+		MSG_WriteByte(ent->skinnum);
+
+	if (bits & U_EFFECTS16)
+		MSG_WriteShort(ent->effects);						// 26
+	else if (bits & U_EFFECTS8)
+		MSG_WriteByte(ent->effects);
+
+	if (bits & U_RENDERFX16)
+		MSG_WriteShort(ent->renderfx);						// 28
+	else if (bits & U_RENDERFX8)
+		MSG_WriteByte(ent->renderfx);
+
+	if (bits & U_SOLID)
+		MSG_WriteLong(ent->solid);							// 32
+
+	if (bits & U_SOUND)
+		MSG_WriteShort(ent->sound);							// 34
+
+	if (bits & U_EVENT)
+		MSG_WriteShort(ent->event);							// 36
+}
+
+void MSG_WriteDeltaEntity(const entity_packed_t *from,
+	const entity_packed_t *to,
+	msgEsFlags_t          flags)
+{
+	uint32_t    bits, mask;
+
+	if (!to) {
+		if (!from)
+			Com_Error(ERR_DROP, "%s: NULL", __func__);
+
+		if (from->number < 1 || from->number >= MAX_EDICTS)
+			Com_Error(ERR_DROP, "%s: bad number: %d", __func__, from->number);
+
+		bits = U_REMOVE;
+		if (from->number & 0xff00)
+			bits |= U_NUMBER16 | U_MOREBITS1;
+
+		MSG_WriteByte(bits & 255);
+		if (bits & 0x0000ff00)
+			MSG_WriteByte((bits >> 8) & 255);
+
+		if (bits & U_NUMBER16)
+			MSG_WriteShort(from->number);
+		else
+			MSG_WriteByte(from->number);
+
+		return; // remove entity
+	}
+
+	if (to->number < 1 || to->number >= MAX_EDICTS)
+		Com_Error(ERR_DROP, "%s: bad number: %d", __func__, to->number);
 
 	if (!from)
 		from = &nullEntityState;
-	
-	if (memcmp(from, to, sizeof(entity_packed_t)))
-		return 0;
 
 	// send an update
 	bits = 0;
 
-	if (to->origin[0] != from->origin[0])
-		bits |= U_ORIGIN1;
-	if (to->origin[1] != from->origin[1])
-		bits |= U_ORIGIN2;
-	if (to->origin[2] != from->origin[2])
-		bits |= U_ORIGIN3;
+	if (!(flags & MSG_ES_FIRSTPERSON)) {
+		if (to->origin[0] != from->origin[0])
+			bits |= U_ORIGIN1;
+		if (to->origin[1] != from->origin[1])
+			bits |= U_ORIGIN2;
+		if (to->origin[2] != from->origin[2])
+			bits |= U_ORIGIN3;
 
-	if (to->angles[0] != from->angles[0])
-		bits |= U_ANGLE1 | U_ANGLE16;
-	if (to->angles[1] != from->angles[1])
-		bits |= U_ANGLE2 | U_ANGLE16;
-	if (to->angles[2] != from->angles[2])
-		bits |= U_ANGLE3 | U_ANGLE16;
+		if (flags & MSG_ES_SHORTANGLES) {
+			if (to->angles[0] != from->angles[0])
+				bits |= U_ANGLE1 | U_ANGLE16;
+			if (to->angles[1] != from->angles[1])
+				bits |= U_ANGLE2 | U_ANGLE16;
+			if (to->angles[2] != from->angles[2])
+				bits |= U_ANGLE3 | U_ANGLE16;
+		}
+		else {
+			if (to->angles[0] != from->angles[0])
+				bits |= U_ANGLE1;
+			if (to->angles[1] != from->angles[1])
+				bits |= U_ANGLE2;
+			if (to->angles[2] != from->angles[2])
+				bits |= U_ANGLE3;
+		}
 
-	if (!VectorCompare(to->old_origin, from->origin))
-		bits |= U_OLDORIGIN;
+		if ((flags & MSG_ES_NEWENTITY) && !VectorCompare(to->old_origin, from->origin))
+			bits |= U_OLDORIGIN;
+	}
 
-	mask = 0xffff0000;
+	if (flags & MSG_ES_UMASK)
+		mask = 0xffff0000;
+	else
+		mask = 0xffff8000;  // don't confuse old clients
 
 	if (to->skinnum != from->skinnum) {
 		if (to->skinnum & mask)
@@ -594,17 +744,28 @@ int MSG_WriteEntity(const entity_packed_t *from, const entity_packed_t *to)
 		bits |= U_SOUND;
 
 	if (to->renderfx & RF_FRAMELERP) {
-		if (!VectorCompare(to->old_origin, from->origin))
-			bits |= U_OLDORIGIN;
+		bits |= U_OLDORIGIN;
 	}
 	else if (to->renderfx & RF_BEAM) {
-		if (!VectorCompare(to->old_origin, from->old_origin))
+		if (flags & MSG_ES_BEAMORIGIN) {
+			if (!VectorCompare(to->old_origin, from->old_origin))
+				bits |= U_OLDORIGIN;
+		}
+		else {
 			bits |= U_OLDORIGIN;
+		}
 	}
 
 	//
 	// write the message
 	//
+	if (!bits && !(flags & MSG_ES_FORCE))
+		return;     // nothing to send!
+
+	if (flags & MSG_ES_REMOVE)
+		bits |= U_REMOVE; // used for MVD stream only
+
+	//----------
 
 	if (to->number & 0xff00)
 		bits |= U_NUMBER16;     // number8 is implicit otherwise
@@ -680,7 +841,7 @@ int MSG_WriteEntity(const entity_packed_t *from, const entity_packed_t *to)
 	if (bits & U_ORIGIN3)
 		MSG_WriteShort(to->origin[2]);
 
-	if (bits & U_ANGLE16) {
+	if ((flags & MSG_ES_SHORTANGLES) && (bits & U_ANGLE16)) {
 		if (bits & U_ANGLE1)
 			MSG_WriteShort(to->angles[0]);
 		if (bits & U_ANGLE2)
@@ -707,255 +868,47 @@ int MSG_WriteEntity(const entity_packed_t *from, const entity_packed_t *to)
 		MSG_WriteByte(to->sound);
 	if (bits & U_EVENT)
 		MSG_WriteByte(to->event);
-	if (bits & U_SOLID)
-		MSG_WriteLong(to->solid);
-
-	return bits;
+	if (bits & U_SOLID) {
+		if (flags & MSG_ES_LONGSOLID)
+			MSG_WriteLong(to->solid);
+		else
+			MSG_WriteShort(to->solid);
+	}
 }
 
-void MSG_WriteDeltaEntity(const entity_packed_t *from,
-                          const entity_packed_t *to,
-                          msgEsFlags_t          flags)
+void MSG_PackEntity(entity_packed_t *out, const entity_state_t *in, bool short_angles)
 {
-    uint32_t    bits, mask;
-
-    if (!to) {
-        Q_assert(from);
-        Q_assert(from->number > 0 && from->number < MAX_EDICTS);
-
-        bits = U_REMOVE;
-        if (from->number & 0xff00)
-            bits |= U_NUMBER16 | U_MOREBITS1;
-
-        MSG_WriteByte(bits & 255);
-        if (bits & 0x0000ff00)
-            MSG_WriteByte((bits >> 8) & 255);
-
-        if (bits & U_NUMBER16)
-            MSG_WriteShort(from->number);
-        else
-            MSG_WriteByte(from->number);
-
-        return; // remove entity
-    }
-
-    Q_assert(to->number > 0 && to->number < MAX_EDICTS);
-
-    if (!from)
-        from = &nullEntityState;
-
-// send an update
-    bits = 0;
-
-    if (!(flags & MSG_ES_FIRSTPERSON)) {
-        if (to->origin[0] != from->origin[0])
-            bits |= U_ORIGIN1;
-        if (to->origin[1] != from->origin[1])
-            bits |= U_ORIGIN2;
-        if (to->origin[2] != from->origin[2])
-            bits |= U_ORIGIN3;
-
-        if (flags & MSG_ES_SHORTANGLES) {
-            if (to->angles[0] != from->angles[0])
-                bits |= U_ANGLE1 | U_ANGLE16;
-            if (to->angles[1] != from->angles[1])
-                bits |= U_ANGLE2 | U_ANGLE16;
-            if (to->angles[2] != from->angles[2])
-                bits |= U_ANGLE3 | U_ANGLE16;
-        } else {
-            if (to->angles[0] != from->angles[0])
-                bits |= U_ANGLE1;
-            if (to->angles[1] != from->angles[1])
-                bits |= U_ANGLE2;
-            if (to->angles[2] != from->angles[2])
-                bits |= U_ANGLE3;
-        }
-
-        if ((flags & MSG_ES_NEWENTITY) && !VectorCompare(to->old_origin, from->origin))
-            bits |= U_OLDORIGIN;
-    }
-
-    if (flags & MSG_ES_UMASK)
-        mask = 0xffff0000;
-    else
-        mask = 0xffff8000;  // don't confuse old clients
-
-    if (to->skinnum != from->skinnum) {
-        if (to->skinnum & mask)
-            bits |= U_SKIN8 | U_SKIN16;
-        else if (to->skinnum & 0x0000ff00)
-            bits |= U_SKIN16;
-        else
-            bits |= U_SKIN8;
-    }
-
-    if (to->frame != from->frame) {
-        if (to->frame & 0xff00)
-            bits |= U_FRAME16;
-        else
-            bits |= U_FRAME8;
-    }
-
-    if (to->effects != from->effects) {
-        if (to->effects & mask)
-            bits |= U_EFFECTS8 | U_EFFECTS16;
-        else if (to->effects & 0x0000ff00)
-            bits |= U_EFFECTS16;
-        else
-            bits |= U_EFFECTS8;
-    }
-
-    if (to->renderfx != from->renderfx) {
-        if (to->renderfx & mask)
-            bits |= U_RENDERFX8 | U_RENDERFX16;
-        else if (to->renderfx & 0x0000ff00)
-            bits |= U_RENDERFX16;
-        else
-            bits |= U_RENDERFX8;
-    }
-
-    if (to->solid != from->solid)
-        bits |= U_SOLID;
-
-    // event is not delta compressed, just 0 compressed
-    if (to->event)
-        bits |= U_EVENT;
-
-    if (to->modelindex != from->modelindex)
-        bits |= U_MODEL;
-    if (to->modelindex2 != from->modelindex2)
-        bits |= U_MODEL2;
-    if (to->modelindex3 != from->modelindex3)
-        bits |= U_MODEL3;
-    if (to->modelindex4 != from->modelindex4)
-        bits |= U_MODEL4;
-
-    if (to->sound != from->sound)
-        bits |= U_SOUND;
-
-    if (to->renderfx & RF_FRAMELERP) {
-        if (!VectorCompare(to->old_origin, from->origin))
-            bits |= U_OLDORIGIN;
-    } else if (to->renderfx & RF_BEAM) {
-        if (!(flags & MSG_ES_BEAMORIGIN) || !VectorCompare(to->old_origin, from->old_origin))
-            bits |= U_OLDORIGIN;
-    }
-
-    //
-    // write the message
-    //
-    if (!bits && !(flags & MSG_ES_FORCE))
-        return;     // nothing to send!
-
-    if (flags & MSG_ES_REMOVE)
-        bits |= U_REMOVE; // used for MVD stream only
-
-    //----------
-
-    if (to->number & 0xff00)
-        bits |= U_NUMBER16;     // number8 is implicit otherwise
-
-    if (bits & 0xff000000)
-        bits |= U_MOREBITS3 | U_MOREBITS2 | U_MOREBITS1;
-    else if (bits & 0x00ff0000)
-        bits |= U_MOREBITS2 | U_MOREBITS1;
-    else if (bits & 0x0000ff00)
-        bits |= U_MOREBITS1;
-
-    MSG_WriteByte(bits & 255);
-
-    if (bits & 0xff000000) {
-        MSG_WriteByte((bits >> 8) & 255);
-        MSG_WriteByte((bits >> 16) & 255);
-        MSG_WriteByte((bits >> 24) & 255);
-    } else if (bits & 0x00ff0000) {
-        MSG_WriteByte((bits >> 8) & 255);
-        MSG_WriteByte((bits >> 16) & 255);
-    } else if (bits & 0x0000ff00) {
-        MSG_WriteByte((bits >> 8) & 255);
-    }
-
-    //----------
-
-    if (bits & U_NUMBER16)
-        MSG_WriteShort(to->number);
-    else
-        MSG_WriteByte(to->number);
-
-    if (bits & U_MODEL)
-        MSG_WriteByte(to->modelindex);
-    if (bits & U_MODEL2)
-        MSG_WriteByte(to->modelindex2);
-    if (bits & U_MODEL3)
-        MSG_WriteByte(to->modelindex3);
-    if (bits & U_MODEL4)
-        MSG_WriteByte(to->modelindex4);
-
-    if (bits & U_FRAME8)
-        MSG_WriteByte(to->frame);
-    else if (bits & U_FRAME16)
-        MSG_WriteShort(to->frame);
-
-    if ((bits & (U_SKIN8 | U_SKIN16)) == (U_SKIN8 | U_SKIN16))  //used for laser colors
-        MSG_WriteLong(to->skinnum);
-    else if (bits & U_SKIN8)
-        MSG_WriteByte(to->skinnum);
-    else if (bits & U_SKIN16)
-        MSG_WriteShort(to->skinnum);
-
-    if ((bits & (U_EFFECTS8 | U_EFFECTS16)) == (U_EFFECTS8 | U_EFFECTS16))
-        MSG_WriteLong(to->effects);
-    else if (bits & U_EFFECTS8)
-        MSG_WriteByte(to->effects);
-    else if (bits & U_EFFECTS16)
-        MSG_WriteShort(to->effects);
-
-    if ((bits & (U_RENDERFX8 | U_RENDERFX16)) == (U_RENDERFX8 | U_RENDERFX16))
-        MSG_WriteLong(to->renderfx);
-    else if (bits & U_RENDERFX8)
-        MSG_WriteByte(to->renderfx);
-    else if (bits & U_RENDERFX16)
-        MSG_WriteShort(to->renderfx);
-
-    if (bits & U_ORIGIN1)
-        MSG_WriteShort(to->origin[0]);
-    if (bits & U_ORIGIN2)
-        MSG_WriteShort(to->origin[1]);
-    if (bits & U_ORIGIN3)
-        MSG_WriteShort(to->origin[2]);
-
-    if ((flags & MSG_ES_SHORTANGLES) && (bits & U_ANGLE16)) {
-        if (bits & U_ANGLE1)
-            MSG_WriteShort(to->angles[0]);
-        if (bits & U_ANGLE2)
-            MSG_WriteShort(to->angles[1]);
-        if (bits & U_ANGLE3)
-            MSG_WriteShort(to->angles[2]);
+    // allow 0 to accomodate empty baselines
+    Q_assert(in->number >= 0 && in->number < MAX_EDICTS);
+    out->number = in->number;
+    out->origin[0] = COORD2SHORT(in->origin[0]);
+    out->origin[1] = COORD2SHORT(in->origin[1]);
+    out->origin[2] = COORD2SHORT(in->origin[2]);
+    if (short_angles) {
+        out->angles[0] = ANGLE2SHORT(in->angles[0]);
+        out->angles[1] = ANGLE2SHORT(in->angles[1]);
+        out->angles[2] = ANGLE2SHORT(in->angles[2]);
     } else {
-        if (bits & U_ANGLE1)
-            MSG_WriteByte(to->angles[0] >> 8);
-        if (bits & U_ANGLE2)
-            MSG_WriteByte(to->angles[1] >> 8);
-        if (bits & U_ANGLE3)
-            MSG_WriteByte(to->angles[2] >> 8);
+        // pack angles8 akin to angles16 to make delta compression happy when
+        // precision suddenly changes between entity updates
+        out->angles[0] = ANGLE2BYTE(in->angles[0]) << 8;
+        out->angles[1] = ANGLE2BYTE(in->angles[1]) << 8;
+        out->angles[2] = ANGLE2BYTE(in->angles[2]) << 8;
     }
-
-    if (bits & U_OLDORIGIN) {
-        MSG_WriteShort(to->old_origin[0]);
-        MSG_WriteShort(to->old_origin[1]);
-        MSG_WriteShort(to->old_origin[2]);
-    }
-
-    if (bits & U_SOUND)
-        MSG_WriteByte(to->sound);
-    if (bits & U_EVENT)
-        MSG_WriteByte(to->event);
-    if (bits & U_SOLID) {
-        if (flags & MSG_ES_LONGSOLID)
-            MSG_WriteLong(to->solid);
-        else
-            MSG_WriteShort(to->solid);
-    }
+    out->old_origin[0] = COORD2SHORT(in->old_origin[0]);
+    out->old_origin[1] = COORD2SHORT(in->old_origin[1]);
+    out->old_origin[2] = COORD2SHORT(in->old_origin[2]);
+    out->modelindex = in->modelindex;
+    out->modelindex2 = in->modelindex2;
+    out->modelindex3 = in->modelindex3;
+    out->modelindex4 = in->modelindex4;
+    out->skinnum = in->skinnum;
+    out->effects = in->effects;
+    out->renderfx = in->renderfx;
+    out->solid = in->solid;
+    out->frame = in->frame;
+    out->sound = in->sound;
+    out->event = in->event;
 }
 
 static inline int OFFSET2CHAR(float x)
@@ -1981,6 +1934,60 @@ void MSG_ReadDeltaUsercmd_Enhanced(const usercmd_t *from, usercmd_t *to)
 
 #if USE_CLIENT || USE_MVD_CLIENT
 
+void MSG_ReadEntity(entity_state_t *ent, int bits)
+{
+	if (bits & U_ORIGIN1)
+		ent->origin[0] = SHORT2COORD(MSG_ReadShort());	// 2
+	if (bits & U_ORIGIN2)
+		ent->origin[1] = SHORT2COORD(MSG_ReadShort());	// 4
+	if (bits & U_ORIGIN3)
+		ent->origin[2] = SHORT2COORD(MSG_ReadShort());	// 6
+
+	if (bits & U_ANGLE1)
+		ent->angles[0] = SHORT2ANGLE(MSG_ReadShort());	// 8
+	if (bits & U_ANGLE2)
+		ent->angles[1] = SHORT2ANGLE(MSG_ReadShort());	// 10
+	if (bits & U_ANGLE3)
+		ent->angles[2] = SHORT2ANGLE(MSG_ReadShort());	// 12
+
+	if (bits & U_MODEL)
+		ent->modelindex = MSG_ReadShort();				// 14
+	if (bits & U_MODEL2)
+		ent->modelindex2 = MSG_ReadShort();				// 16
+	if (bits & U_MODEL3)
+		ent->modelindex3 = MSG_ReadShort();				// 18
+	if (bits & U_MODEL4)
+		ent->modelindex4 = MSG_ReadShort();				// 20
+
+	if (bits & U_FRAME16)
+		ent->frame = MSG_ReadShort();					// 22
+	else if (bits & U_FRAME8)
+		ent->frame = MSG_ReadByte();
+
+	if (bits & U_SKIN16)
+		ent->skinnum = MSG_ReadShort();					// 24
+	else if (bits & U_SKIN8)
+		ent->skinnum = MSG_ReadByte();
+
+	if (bits & U_EFFECTS16)
+		ent->effects = MSG_ReadShort();					// 26
+	else if (bits & U_EFFECTS8)
+		ent->effects = MSG_ReadByte();
+
+	if (bits & U_RENDERFX16)
+		ent->renderfx = MSG_ReadShort();				// 28
+	else if (bits & U_RENDERFX8)
+		ent->renderfx = MSG_ReadByte();
+
+	if (bits & U_SOLID)
+		ent->solid = MSG_ReadLong();					// 32
+
+	if (bits & U_SOUND)
+		ent->sound = MSG_ReadShort();					// 34
+
+	if (bits & U_EVENT)
+		ent->event = MSG_ReadShort();					// 36
+}
 
 void MSG_ParseEntity_RK(const entity_state_t *from, entity_state_t *to, int number, int bits)
 {

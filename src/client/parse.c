@@ -63,17 +63,34 @@ static void CL_ParseEntites(server_frame_t *oldframe, server_frame_t *frame)
 	while (1)
 	{
 		int bits;
-		i = MSG_ParseEntityBits(&bits);
+		//i = MSG_ParseEntityBits(&bits);
 		//i = MSG_ReadShort();
+		bits = MSG_ReadByte();
+		if (bits & U_MOREBITS1)
+			bits |= (MSG_ReadByte() << 8);
+		if (bits & U_MOREBITS2)
+			bits |= (MSG_ReadByte() << 16);
+		if (bits & U_MOREBITS3)
+			bits |= (MSG_ReadByte() << 24);
+
+		if (bits & U_NUMBER16)
+			i = MSG_ReadShort();
+		else
+			i = MSG_ReadByte();
 
 		if (i == 0x7FFF)
 			break;
 
+		//if (bits)
+		//	Com_Printf("%s:  %i bits=0x%08X\n", __func__, i, bits);
+
 		Q_assert(i < MAX_EDICTS); // this should be valid...
 		entity_state_t *oldent = &cl.csEntities[i];
 		entity_state_t ent = *oldent;
+		ent.number = i;
 
-		MSG_ParseEntity_RK(oldent, &ent, i, bits);
+		MSG_ReadEntity(&ent, bits);
+		//MSG_ParseEntity_RK(oldent, &ent, i, bits);
 		//memcpy(&ent, MSG_ReadData(sizeof(entity_packed_t)), sizeof(entity_packed_t));
 		//ent = *((entity_state_t*)MSG_ReadData(sizeof(entity_state_t)));
 
@@ -375,7 +392,12 @@ static void CL_ParseFrame(int extrabits)
     SHOWNET(2, "%3zu:packetentities\n", msg_read.readcount - 1);
 
 	if (cls.serverProtocol == PROTOCOL_VERSION_RK)
-		CL_ParseEntites(oldframe, &frame);
+	{
+		if (MSG_ReadByte() == svc_deltapacketentities)
+		{
+			CL_ParseEntites(oldframe, &frame);
+		}
+	}
 	else
 		CL_ParsePacketEntities(oldframe, &frame);
 
