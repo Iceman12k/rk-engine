@@ -50,8 +50,28 @@ static void SV_SendDeltaEntity(edict_t *old, edict_t *new, msgEsFlags_t flags)
 
 static void SV_SendEntities(client_t *client, client_frame_t *from, client_frame_t *to, int clientEntityNum)
 {
+	byte clientpvs[VIS_MAX_BYTES];
+	byte clientphs[VIS_MAX_BYTES];
+	int  clientarea, clientcluster;
+	mleaf_t *leaf;
+	player_state_t  *ps;
+	vec3_t org;
 	qboolean written;
-	int i;
+	int i, j;
+
+	// find the client's PVS
+	ps = &client->edict->client->ps;
+	VectorMA(ps->viewoffset, 0.125f, ps->pmove.origin, org);
+
+	leaf = CM_PointLeaf(client->cm, org);
+	clientarea = leaf->area;
+	clientcluster = leaf->cluster;
+
+	// calculate the visible areas
+	to->areabytes = CM_WriteAreaBits(client->cm, to->areabits, clientarea);
+
+	CM_FatPVS(client->cm, clientpvs, org);
+	BSP_ClusterVis(client->cm->cache, clientphs, clientcluster, DVIS_PHS);
 
 	MSG_WriteByte(svc_deltapacketentities);
 
@@ -60,14 +80,77 @@ static void SV_SendEntities(client_t *client, client_frame_t *from, client_frame
 	{
 		entity_state_t oldent;
 		entity_state_t ent;
-		entity_packed_t *oldp;
-		entity_packed_t *entp;
 		edict_t *edict;
 		int bits;
+		qboolean edict_active;
 
 		// generate new snapshot
 		edict = EDICT_NUM(i);
-		if (edict->inuse && !(edict->svflags & SVF_NOCLIENT))
+		edict_active = false;
+
+		if (edict->inuse)
+		{
+			edict_active = true;
+
+			// ignore if not touching a PV leaf
+			if (edict != client->edict && !sv_novis->integer) {
+				// check area
+				if (!CM_AreasConnected(client->cm, clientarea, edict->areanum)) {
+					// doors can legally straddle two areas, so
+					// we may need to check another one
+					if (!CM_AreasConnected(client->cm, clientarea, edict->areanum2)) {
+						{
+							edict_active = false;        // blocked by a door
+							goto pvsfail;
+						}
+					}
+				}
+
+				// beams just check one point for PHS
+				if (edict->s.renderfx & RF_BEAM) {
+					if (!Q_IsBitSet(clientphs, edict->clusternums[0]))
+					{
+						edict_active = false;
+						goto pvsfail;
+					}
+				}
+				else {
+					if (edict->num_clusters == -1) {
+						// too many leafs for individual check, go by headnode
+						if (!CM_HeadnodeVisible(CM_NodeNum(client->cm, edict->headnode), clientpvs))
+						{
+							edict_active = false;
+							goto pvsfail;
+						}
+					}
+					else {
+						// check individual leafs
+						for (j = 0; j < edict->num_clusters; j++)
+							if (Q_IsBitSet(clientpvs, edict->clusternums[j]))
+								break;
+						if (j == edict->num_clusters)
+						{
+							edict_active = false;       // not visible
+							goto pvsfail;
+						}
+					}
+
+					if (!edict->s.modelindex)
+					{
+						// don't send sounds if they will be attenuated away
+						if (Distance(org, edict->s.origin) > 1000)
+						{
+							edict_active = false;
+							goto pvsfail;
+						}
+					}
+				}
+			}
+		}
+
+pvsfail:
+
+		if (edict_active && !(edict->svflags & SVF_NOCLIENT))
 			ent = edict->s;
 		else
 		{
