@@ -748,6 +748,7 @@ typedef enum {
 #define PMF_TIME_TELEPORT   32  // pm_time is non-moving time
 #define PMF_NO_PREDICTION   64  // temporarily disables prediction (used for grappling hook)
 #define PMF_TELEPORT_BIT    128 // used by q2pro
+#define PMF_CROUCHJUMP		256
 
 // this structure needs to be communicated bit-accurate
 // from the server to the client to guarantee that
@@ -759,7 +760,7 @@ typedef struct {
 
     float       origin[3];      // 12.3
     short       velocity[3];    // 12.3
-    byte        pm_flags;       // ducked, jump_held, etc
+    int         pm_flags;       // ducked, jump_held, etc
     byte        pm_time;        // each unit = 8 ms
     short       gravity;
     short       delta_angles[3];    // add to command angles to get view direction

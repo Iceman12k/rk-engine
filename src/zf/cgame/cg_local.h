@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "shared/shared.h"
 #include "../q_list.h"
 
+#define CGAME_API_VERSION 1
+
 #define TAG_GAME    765     // clear when unloading the dll
 #define TAG_LEVEL   766     // clear when loading a new level
 
@@ -97,67 +99,8 @@ struct edict_s {
 //
 typedef struct {
 	// special messages
-	void(*q_printf(1, 2) printf)(const char *fmt, ...);
 	void(*q_printf(1, 2) dprintf)(const char *fmt, ...);
-
 	void(*q_noreturn q_printf(1, 2) error)(const char *fmt, ...);
-
-	// the *index functions create configstrings and some internal server state
-	int(*modelindex)(const char *name);
-	int(*soundindex)(const char *name);
-	int(*imageindex)(const char *name);
-
-	void(*setmodel)(edict_t *ent, const char *name);
-
-	// collision detection
-	trace_t(*q_gameabi trace)(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, edict_t *passent, int contentmask);
-	int(*pointcontents)(const vec3_t point);
-	qboolean(*inPVS)(const vec3_t p1, const vec3_t p2);
-	qboolean(*inPHS)(const vec3_t p1, const vec3_t p2);
-	void(*SetAreaPortalState)(int portalnum, qboolean open);
-	qboolean(*AreasConnected)(int area1, int area2);
-
-	// an entity will never be sent to a client or used for collision
-	// if it is not passed to linkentity.  If the size, position, or
-	// solidity changes, it must be relinked.
-	void(*linkentity)(edict_t *ent);
-	void(*unlinkentity)(edict_t *ent);     // call before removing an interactive edict
-	int(*BoxEdicts)(const vec3_t mins, const vec3_t maxs, edict_t **list, int maxcount, int areatype);
-	void(*Pmove)(pmove_t *pmove);          // player movement code common with client prediction
-
-	// network messaging
-	void(*multicast)(const vec3_t origin, multicast_t to);
-	void(*unicast)(edict_t *ent, qboolean reliable);
-	void(*WriteChar)(int c);
-	void(*WriteByte)(int c);
-	void(*WriteShort)(int c);
-	void(*WriteLong)(int c);
-	void(*WriteFloat)(float f);
-	void(*WriteString)(const char *s);
-	void(*WritePosition)(const vec3_t pos);    // some fractional bits
-	void(*WriteDir)(const vec3_t pos);         // single byte encoded, very coarse
-	void(*WriteAngle)(float f);
-
-	// managed memory allocation
-	void    *(*TagMalloc)(unsigned size, unsigned tag);
-	void(*TagFree)(void *block);
-	void(*FreeTags)(unsigned tag);
-
-	// console variable interaction
-	cvar_t  *(*cvar)(const char *var_name, const char *value, int flags);
-	cvar_t  *(*cvar_set)(const char *var_name, const char *value);
-	cvar_t  *(*cvar_forceset)(const char *var_name, const char *value);
-
-	// ClientCommand and ServerCommand parameter access
-	int(*argc)(void);
-	char    *(*argv)(int n);
-	char    *(*args)(void);     // concatenation of all argv >= 1
-
-	// add commands to the server console as if they were typed in
-	// for map changing, etc
-	void(*AddCommandString)(const char *text);
-
-	void(*DebugGraph)(float value, int color);
 } cgame_import_t;
 
 //
@@ -179,5 +122,6 @@ extern  cgame_import_t   gi;
 extern  cgame_export_t   globals;
 
 
-
+void    Com_LPrintf(print_type_t type, const char *fmt, ...);
+#define Com_Printf(...) Com_LPrintf(PRINT_ALL, __VA_ARGS__)
 

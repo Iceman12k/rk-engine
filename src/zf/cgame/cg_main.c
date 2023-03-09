@@ -24,8 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cgame_import_t   gi;
 cgame_export_t   globals;
 
-#ifndef GAME_HARD_LINKED
-// this is only here so the functions in q_shared.c can link
 void Com_LPrintf(print_type_t type, const char *fmt, ...)
 {
 	va_list     argptr;
@@ -53,4 +51,53 @@ void Com_Error(error_type_t type, const char *fmt, ...)
 
 	gi.error("%s", text);
 }
-#endif
+
+
+/*
+============
+InitGame
+
+This will be called when the dll is first loaded, which
+only happens when a new game is started or a save game
+is loaded.
+============
+*/
+static void G_Init(void)
+{
+	gi.dprintf("==== CGame Initialized ====\n");
+}
+
+
+static void G_Shutdown(void)
+{
+	gi.dprintf("==== ShutdownGame ====\n");
+
+	//gi.FreeTags(TAG_LEVEL);
+	//gi.FreeTags(TAG_GAME);
+}
+
+
+/*
+=================
+GetGameAPI
+
+Returns a pointer to the structure with all entry points
+and global variables
+=================
+*/
+q_exported cgame_export_t *GetCGameAPI(cgame_import_t *import)
+{
+	gi = *import;
+	gi.dprintf("==== %s ====\n", __func__);
+
+	globals.apiversion = CGAME_API_VERSION;
+	globals.Init = G_Init;
+	globals.Shutdown = G_Shutdown;
+
+	return &globals;
+}
+
+
+
+
+

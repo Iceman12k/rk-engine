@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 // cl_main.c  -- client main loop
 
 #include "client.h"
+#include "client/cgame.h"
 
 cvar_t  *rcon_address;
 
@@ -1684,6 +1685,8 @@ void CL_Begin(void)
 #endif
 
     CL_ClientCommand(va("begin %i\n", precache_spawncount));
+
+	CG_InitGameProgs();
 
     CL_UpdateGunSetting();
     CL_UpdateBlendSetting();
