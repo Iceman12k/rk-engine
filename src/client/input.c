@@ -18,6 +18,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 // cl.input.c  -- builds an intended movement command to send to the server
 
 #include "client.h"
+#include "client/cgame.h"
+#include "system/pthread.h"
 
 static cvar_t    *cl_nodelta;
 static cvar_t    *cl_maxpackets;
@@ -58,6 +60,48 @@ INPUT SUBSYSTEM
 
 ===============================================================================
 */
+
+static pthread_t input_thread;
+static pthread_mutex_t input_mutex;
+
+typedef struct in_threadevent_s {
+	unsigned long index;
+	unsigned long value;
+	unsigned long long timestamp;
+
+	struct in_threadevent_s *next;
+} in_threadevent_t;
+
+in_threadevent_t *input_events;
+unsigned long input_event_counter;
+
+static void IN_AddEvent(unsigned long value)
+{
+	// allocate our event, we can do this whenever
+	in_threadevent_t *ev = malloc(sizeof(in_threadevent_t));
+	memset(ev, 0, sizeof(in_threadevent_t)); // clear memory for good measure
+	ev->index = input_event_counter++;
+	ev->value = value;
+	ev->timestamp = Sys_Milliseconds();
+
+	// link into the input list, which requires us to lock the mutex
+	pthread_mutex_lock(&input_mutex);
+	ev->next = input_events;
+	input_events = ev;
+	pthread_mutex_unlock(&input_mutex);
+}
+
+static void IN_ParseEvents()
+{
+	unsigned long current_time = Sys_Milliseconds();
+
+	pthread_mutex_lock(&input_mutex);
+	for(in_threadevent_t *hold, *in = input_events; in; hold = in, in = in->next, free(hold), input_events = in)
+	{
+		Com_Printf("Threaded Input Event: #%lu: %llu %lu\n", in->index, current_time - in->timestamp, in->value);
+	}
+	pthread_mutex_unlock(&input_mutex);
+}
 
 typedef struct {
     bool        modified;
@@ -131,6 +175,8 @@ IN_Frame
 */
 void IN_Frame(void)
 {
+	IN_ParseEvents();
+
     if (input.modified) {
         IN_Restart_f();
     }
@@ -197,6 +243,12 @@ void IN_Init(void)
 
     in_grab = Cvar_Get("in_grab", "1", 0);
     in_grab->changed = in_changed_soft;
+
+	pthread_mutex_init(&input_mutex, NULL);
+	if (pthread_create(&input_thread, NULL, CL_InputThread_Main, NULL)) // sigh, returns true (or an error number) on a failure.
+	{
+		pthread_mutex_destroy(&input_mutex);
+	}
 
     IN_Activate();
 }
@@ -1021,11 +1073,14 @@ static void CL_SendBatchedCmd(void)
         for (j = oldest->cmdNumber + 1; j <= history->cmdNumber; j++) {
             cmd = &cl.cmds[j & CMD_MASK];
             totalMsec += cmd->msec;
+			cge->SendUserInput(oldcmd, cmd);
+#if 0
             bits = MSG_WriteDeltaUsercmd_Enhanced(oldcmd, cmd);
 #if USE_DEBUG
             if (cl_showpackets->integer == 3) {
                 MSG_ShowDeltaUsercmdBits_Enhanced(bits);
             }
+#endif
 #endif
             oldcmd = cmd;
         }
@@ -1160,4 +1215,13 @@ void CL_SendCmd(void)
     }
 
     cl.sendPacketNow = false;
+}
+
+void CL_InputThread_Main(void)
+{
+	while (1)
+	{
+		IN_AddEvent(1337);
+		Sleep(250);
+	}
 }
