@@ -134,7 +134,9 @@ game_src = [
 ]
 
 cgame_src = [
+  'src/zf/cgame/cg_input.c',
   'src/zf/cgame/cg_main.c',
+  'src/shared/m_flash.c',
   'src/shared/shared.c',
 ]
 
@@ -186,7 +188,7 @@ endif
 
 common_link_args = []
 exe_link_args = []
-dll_link_args = []
+dll_link_args = ['-lm']
 
 if cc.get_argument_syntax() == 'gcc'
   if x86
