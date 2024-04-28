@@ -19,7 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "shared/shared.h"
 #include "common/pmove.h"
 
-#define STEPSIZE    25
+#define STEPSIZE    18
 
 // all of the locals will be zeroed before each
 // pmove, just to make damn sure we don't have
@@ -46,7 +46,7 @@ static pml_t        pml;
 static pmoveParams_t    *pmp;
 
 // movement parameters
-static const float  pm_stopspeed = 150;
+static const float  pm_stopspeed = 100;
 static const float  pm_duckspeed = 100;
 static const float  pm_accelerate = 10;
 static const float  pm_wateraccelerate = 10;
@@ -689,9 +689,9 @@ static void PM_CheckJump(void)
 
     pm->groundentity = NULL;
     pm->s.pm_flags &= ~PMF_ON_GROUND;
-    pml.velocity[2] += 330;
-    if (pml.velocity[2] < 330)
-        pml.velocity[2] = 330;
+    pml.velocity[2] += 270;
+    if (pml.velocity[2] < 270)
+        pml.velocity[2] = 270;
 }
 
 /*
@@ -832,15 +832,12 @@ Sets mins, maxs, and pm->viewheight
 static void PM_CheckDuck(void)
 {
     trace_t trace;
-	int pm_flags;
 
-	pm_flags = pm->s.pm_flags;
+    pm->mins[0] = -16;
+    pm->mins[1] = -16;
 
-    pm->mins[0] = -20;
-    pm->mins[1] = -20;
-
-    pm->maxs[0] = 20;
-    pm->maxs[1] = 20;
+    pm->maxs[0] = 16;
+    pm->maxs[1] = 16;
 
     if (pm->s.pm_type == PM_GIB) {
         pm->mins[2] = 0;
@@ -849,47 +846,30 @@ static void PM_CheckDuck(void)
         return;
     }
 
-    pm->mins[2] = -30;
-	pm->maxs[2] = 30;
-	pm->viewheight = 22;
+    pm->mins[2] = -24;
 
     if (pm->s.pm_type == PM_DEAD) {
         pm->s.pm_flags |= PMF_DUCKED;
-    } else if (pm->cmd.upmove < 0) {// && (pm->s.pm_flags & PMF_ON_GROUND)) {
+    } else if (pm->cmd.upmove < 0 && (pm->s.pm_flags & PMF_ON_GROUND)) {
         // duck
         pm->s.pm_flags |= PMF_DUCKED;
     } else {
         // stand up if possible
         if (pm->s.pm_flags & PMF_DUCKED) {
             // try to stand up
-            pm->maxs[2] = 30;
-			if (pm_flags & PMF_ON_GROUND)
-				pml.origin[2] += 16;
+            pm->maxs[2] = 32;
             trace = pm->trace(pml.origin, pm->mins, pm->maxs, pml.origin);
-			if (!trace.allsolid)
-				pm->s.pm_flags &= ~PMF_DUCKED;
-			else if (pm_flags & PMF_ON_GROUND)
-				pml.origin[2] -= 16;
+            if (!trace.allsolid)
+                pm->s.pm_flags &= ~PMF_DUCKED;
         }
     }
 
     if (pm->s.pm_flags & PMF_DUCKED) {
-        pm->mins[2] = -14;
-
-		if (!(pm_flags & PMF_DUCKED))
-		{
-			if (pm_flags & PMF_ON_GROUND)
-			{
-				pml.origin[2] -= 16;
-			}
-			else if (pm->s.pm_flags & PMF_CROUCHJUMP)
-			{
-				pm->s.pm_flags |= PMF_CROUCHJUMP;
-				pml.origin[2] += 16;
-			}
-		}
+        pm->maxs[2] = 4;
+        pm->viewheight = -2;
     } else {
-        pm->mins[2] = -30;
+        pm->maxs[2] = 32;
+        pm->viewheight = 22;
     }
 }
 
@@ -1163,8 +1143,8 @@ void PmoveInit(pmoveParams_t *pmp)
 
     pmp->speedmult = 1;
     pmp->watermult = 0.5f;
-    pmp->maxspeed = 340;
-    pmp->friction = 4;
+    pmp->maxspeed = 300;
+    pmp->friction = 6;
     pmp->waterfriction = 1;
     pmp->flyfriction = 9;
 }
