@@ -79,7 +79,7 @@ static void G_Shutdown(void)
 
 /*
 =================
-GetGameAPI
+GetCGameAPI
 
 Returns a pointer to the structure with all entry points
 and global variables
@@ -93,6 +93,7 @@ q_exported cgame_export_t *GetCGameAPI(cgame_import_t *import)
 	globals.apiversion = CGAME_API_VERSION;
 	globals.Init = G_Init;
 	globals.Shutdown = G_Shutdown;
+	globals.SendUserInput = CG_SendUserInput;
 
 	return &globals;
 }

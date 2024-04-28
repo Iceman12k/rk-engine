@@ -1073,14 +1073,15 @@ static void CL_SendBatchedCmd(void)
         for (j = oldest->cmdNumber + 1; j <= history->cmdNumber; j++) {
             cmd = &cl.cmds[j & CMD_MASK];
             totalMsec += cmd->msec;
-			cge->SendUserInput(oldcmd, cmd);
-#if 0
+#if 1
             bits = MSG_WriteDeltaUsercmd_Enhanced(oldcmd, cmd);
 #if USE_DEBUG
             if (cl_showpackets->integer == 3) {
                 MSG_ShowDeltaUsercmdBits_Enhanced(bits);
             }
 #endif
+#else
+			cge->SendUserInput(oldcmd, cmd);
 #endif
             oldcmd = cmd;
         }
@@ -1219,9 +1220,11 @@ void CL_SendCmd(void)
 
 void CL_InputThread_Main(void)
 {
+	/*
 	while (1)
 	{
 		IN_AddEvent(1337);
 		Sleep(250);
 	}
+	*/
 }

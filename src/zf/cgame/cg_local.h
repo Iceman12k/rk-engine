@@ -114,7 +114,7 @@ typedef struct {
 	// and the server can be allocated in init
 	void(*Init)(void);
 	void(*Shutdown)(void);
-
+	void(*SendUserInput)(usercmd_t *oldcmd, usercmd_t *cmd);
 
 } cgame_export_t;
 
@@ -124,4 +124,7 @@ extern  cgame_export_t   globals;
 
 void    Com_LPrintf(print_type_t type, const char *fmt, ...);
 #define Com_Printf(...) Com_LPrintf(PRINT_ALL, __VA_ARGS__)
+
+//cg_input.c
+void CG_SendUserInput(usercmd_t *oldcmd, usercmd_t *cmd);
 

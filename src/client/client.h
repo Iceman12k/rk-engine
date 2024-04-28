@@ -633,6 +633,7 @@ void CL_UpdateCmd(int msec);
 void CL_FinalizeCmd(void);
 void CL_SendCmd(void);
 
+void CL_InputThread_Main(void);
 
 //
 // parse.c

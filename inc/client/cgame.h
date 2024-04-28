@@ -23,7 +23,7 @@ typedef struct {
 	// and the server can be allocated in init
 	void(*Init)(void);
 	void(*Shutdown)(void);
-
+	void(*SendUserInput)(usercmd_t *oldcmd, usercmd_t *cmd);
 
 } cgame_export_t;
 
