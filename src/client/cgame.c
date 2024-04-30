@@ -1,0 +1,151 @@
+#include "client.h"
+#include "client/cgame.h"
+
+static void *cgame_library;
+cgame_export_t *cge;
+
+
+static void PF_dprintf(const char *fmt, ...)
+{
+	char        msg[MAXPRINTMSG];
+	va_list     argptr;
+
+	va_start(argptr, fmt);
+	Q_vsnprintf(msg, sizeof(msg), fmt, argptr);
+	va_end(argptr);
+
+	Com_Printf("%s", msg);
+}
+
+static q_noreturn void PF_error(const char *fmt, ...)
+{
+	char        msg[MAXERRORMSG];
+	va_list     argptr;
+
+	va_start(argptr, fmt);
+	Q_vsnprintf(msg, sizeof(msg), fmt, argptr);
+	va_end(argptr);
+
+	Com_Error(ERR_DROP, "Game Error: %s", msg);
+}
+
+static const cgame_import_t cgame_import = {
+	.dprintf = PF_dprintf,
+	.error = PF_error,
+};
+
+/*
+===============
+CG_ShutdownGameProgs
+Called when either the entire server is being killed, or
+it is changing to a different game directory.
+===============
+*/
+void CG_ShutdownGameProgs(void)
+{
+	if (cge) {
+		cge->Shutdown();
+		cge = NULL;
+	}
+	if (cgame_library) {
+		Sys_FreeLibrary(cgame_library);
+		cgame_library = NULL;
+	}
+	Cvar_Set("cg_features", "0");
+
+	//Z_LeakTest(TAG_FREE);
+}
+
+static void *CG_LoadGameLibraryFrom(const char *path)
+{
+	void *entry;
+
+	entry = Sys_LoadLibrary(path, "GetCGameAPI", &cgame_library);
+	if (!entry)
+		Com_EPrintf("Failed to load cgame library: %s\n", Com_GetLastError());
+	else
+		Com_Printf("Loaded cgame library from %s\n", path);
+
+	return entry;
+}
+
+static void *CG_LoadGameLibrary(const char *libdir, const char *gamedir)
+{
+	char path[MAX_OSPATH];
+
+	if (Q_concat(path, sizeof(path), libdir,
+		PATH_SEP_STRING, gamedir, PATH_SEP_STRING,
+		"cgame" CPUSTRING LIBSUFFIX) >= sizeof(path)) {
+		Com_EPrintf("CGame library path length exceeded\n");
+		return NULL;
+	}
+
+	if (os_access(path, X_OK)) {
+		Com_Printf("Can't access %s: %s\n", path, strerror(errno));
+		return NULL;
+	}
+
+	return CG_LoadGameLibraryFrom(path);
+}
+
+/*
+===============
+CG_InitGameProgs
+Init the game subsystem for a new map
+===============
+*/
+void CG_InitGameProgs(void)
+{
+	cgame_import_t   import;
+	cgame_entry_t    entry = NULL;
+
+	// unload anything we have now
+	CG_ShutdownGameProgs();
+
+	// for debugging or `proxy' mods
+	if (sys_forcegamelib->string[0])
+		entry = CG_LoadGameLibraryFrom(sys_forcegamelib->string);
+
+	// try game first
+	if (!entry && fs_game->string[0]) {
+		if (sys_homedir->string[0])
+			entry = CG_LoadGameLibrary(sys_homedir->string, fs_game->string);
+		if (!entry)
+			entry = CG_LoadGameLibrary(sys_libdir->string, fs_game->string);
+	}
+
+	// then try baseq2
+	if (!entry) {
+		if (sys_homedir->string[0])
+			entry = CG_LoadGameLibrary(sys_homedir->string, BASEGAME);
+		if (!entry)
+			entry = CG_LoadGameLibrary(sys_libdir->string, BASEGAME);
+	}
+
+	// all paths failed
+	if (!entry)
+		Com_Error(ERR_DROP, "Failed to load cgame library");
+
+	// load a new game dll
+	import = cgame_import;
+
+	cge = entry(&import);
+	if (!cge) {
+		Com_Error(ERR_DROP, "CGame library returned NULL exports");
+	}
+
+	if (cge->apiversion != CGAME_API_VERSION) {
+		Com_Error(ERR_DROP, "CGame library is version %d, expected %d",
+			cge->apiversion, CGAME_API_VERSION);
+	}
+
+	// initialize
+	cge->Init();
+
+	/*
+	// sanitize edict_size
+	if (cge->edict_size < sizeof(edict_t) || cge->edict_size >(unsigned)INT_MAX / MAX_EDICTS) {
+		Com_Error(ERR_DROP, "Game library returned bad size of edict_t");
+	}
+	*/
+}

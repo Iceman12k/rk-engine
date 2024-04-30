@@ -25,6 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 //
 
 #define GAME_API_VERSION    3
+#define CGAME_API_VERSION   1
 
 // edict->svflags
 

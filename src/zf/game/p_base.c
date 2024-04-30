@@ -241,7 +241,8 @@ void ClientThink(edict_t *ent, usercmd_t *ucmd)
 	// save results of pmove
 	client->ps.pmove = pm.s;
 	client->old_pmove = pm.s;
-
+	client->ps.viewoffset[2] = pm.viewheight;
+	
 	ent->viewheight = pm.viewheight;
 	ent->waterlevel = pm.waterlevel;
 	ent->watertype = pm.watertype;
@@ -285,7 +286,7 @@ void PutClientInServer(edict_t *ent)
 		return;
 
 	memset(&ent->client->ps, 0, sizeof(client->ps));
-    client->ps.fov = 90;
+    client->ps.fov = 110;
 }
 
 /*

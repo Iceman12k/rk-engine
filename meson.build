@@ -54,6 +54,7 @@ client_src = [
   'src/client/sound/mem.c',
   'src/client/tent.c',
   'src/client/view.c',
+  'src/client/cgame.c',
   'src/common/async.c',
   'src/server/commands.c',
   'src/server/entities.c',
@@ -107,15 +108,21 @@ server_src = [
 ]
 
 game_src = [
-  'src/zf/g_main.c',
-  'src/zf/g_svmain.c',
-  'src/zf/g_svcmds.c',
-  'src/zf/g_spawn.c',
-  'src/zf/g_utils.c',
-  'src/zf/g_phys.c',
-  'src/zf/g_world.c',
-  'src/zf/p_base.c',
-  'src/zf/p_cmd.c',
+  'src/zf/game/g_main.c',
+  'src/zf/game/g_svmain.c',
+  'src/zf/game/g_svcmds.c',
+  'src/zf/game/g_spawn.c',
+  'src/zf/game/g_utils.c',
+  'src/zf/game/g_phys.c',
+  'src/zf/game/g_world.c',
+  'src/zf/game/p_base.c',
+  'src/zf/game/p_cmd.c',
+  'src/shared/m_flash.c',
+  'src/shared/shared.c',
+]
+
+cgame_src = [
+  'src/zf/cgame/cg_main.c',
   'src/shared/m_flash.c',
   'src/shared/shared.c',
 ]
@@ -209,6 +216,8 @@ elif cc.get_id() == 'msvc'
   common_args += ['/wd4146', '/wd4244', '/wd4305']
 endif
 
+dll_link_args += '-lm'
+
 add_project_arguments(common_args, language: 'c')
 add_project_link_arguments(common_link_args, language: 'c')
 
@@ -255,6 +264,7 @@ common_deps = [zlib]
 client_deps = [png, curl, sdl2]
 server_deps = []
 game_deps = [zlib]
+cgame_deps = [zlib]
 
 jpeg = dependency('libjpeg',
   required:        get_option('libjpeg'),
@@ -401,9 +411,9 @@ shared_library('game' + cpu, game_src,
   override_options:      get_option('game-build-options'),
 )
 
-shared_library('cgame' + cpu, game_src,
+shared_library('cgame' + cpu, cgame_src,
   name_prefix:           '',
-  dependencies:          game_deps,
+  dependencies:          cgame_deps,
   include_directories:   'inc',
   gnu_symbol_visibility: 'hidden',
   link_args:             dll_link_args,

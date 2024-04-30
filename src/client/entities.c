@@ -731,6 +731,11 @@ static void CL_AddPacketEntities(void)
                 ent.angles[ROLL] = -ent.angles[ROLL];
         }
 
+		if (s1->morefx & EFX_BILLBOARD) { // make this additive, to allow some fun tricks anyway
+			ent.angles[0] += cl.viewangles[0] * -1;
+			ent.angles[1] += cl.viewangles[1] + 180;
+		}
+
         if (s1->morefx & EFX_FLASHLIGHT) {
             vec3_t forward, start, end;
             trace_t trace;

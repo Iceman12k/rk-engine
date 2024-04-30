@@ -15,9 +15,23 @@ typedef struct {
 void SP_worldspawn(edict_t *ent);
 void SP_func_illusionary(edict_t *ent);
 
+void SP_item_health(edict_t *ent)
+{
+    ent->model = "models/items/armor/shard/tris.md2";
+	ent->s.modelindex = gi.modelindex(ent->model);
+	ent->s.effects = EF_ROTATE | EF_BOB;
+	ent->s.renderfx = RF_GLOW; 
+	//ent->x.morefx = EFX_BILLBOARD;
+	gi.linkentity(ent);
+}
+
 static const spawn_func_t spawn_funcs[] = {
 	{"worldspawn", SP_worldspawn},
 	{"func_illusionary", SP_func_illusionary},
+	{ "item_health", SP_item_health },
+	{ "item_armor_shard", SP_item_health },
+	{ "item_armor_combat", SP_item_health },
+	{ "item_armor_body", SP_item_health },
 
 	{NULL, NULL}
 };

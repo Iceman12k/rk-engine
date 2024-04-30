@@ -30,7 +30,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define NUM_FOR_EDICT(e) ((int)(((byte *)(e) - (byte *)g_edicts) / sizeof(g_edicts[0])))
 
 // features this game supports
-#define G_FEATURES  (GMF_PROPERINUSE|GMF_WANT_ALL_DISCONNECTS|GMF_ENHANCED_SAVEGAMES|GMF_VARIABLE_FPS)
+#define G_FEATURES  (GMF_PROPERINUSE|GMF_WANT_ALL_DISCONNECTS|GMF_ENHANCED_SAVEGAMES|GMF_VARIABLE_FPS|GMF_PROTOCOL_EXTENSIONS)
 
 // the "gameversion" client command will print this plus compile date
 #define GAMEVERSION "zynfyr-q2"

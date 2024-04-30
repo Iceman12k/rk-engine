@@ -974,6 +974,9 @@ typedef struct {
 #define EFX_TELEPORTER2         BIT(4)
 #define EFX_GRENADE_LIGHT       BIT(5)
 //KEX
+//RKENGINE
+#define EFX_BILLBOARD			BIT(6)
+//
 
 // entity_state_t->renderfx flags
 #define RF_MINLIGHT         BIT(0)      // allways have some light (viewmodel)
