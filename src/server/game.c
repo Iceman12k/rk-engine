@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 const game_export_t     *ge;
 const game_export_ex_t  *gex;
+game_export_ex_extensions_t gex_e;
 
 static void PF_configstring(int index, const char *val);
 
@@ -892,6 +893,7 @@ it is changing to a different game directory.
 void SV_ShutdownGameProgs(void)
 {
     gex = NULL;
+	memset(&gex_e, 0, sizeof(gex_e)); // Reki (April 30 2024): clear extension links
     if (ge) {
         ge->Shutdown();
         ge = NULL;
@@ -1014,4 +1016,9 @@ void SV_InitGameProgs(void)
     if (ge->max_edicts <= sv_maxclients->integer || ge->max_edicts > svs.csr.max_edicts) {
         Com_Error(ERR_DROP, "Game library returned bad number of max_edicts");
     }
+
+	if (gex)
+	{
+		gex_e.CustomizeEntityForClient = gex->GetExtension("CUSTOMIZEENTITYFORCLIENT");
+	}
 }

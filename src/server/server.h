@@ -756,6 +756,7 @@ void SV_WriteFrameToClient_Enhanced(client_t *client);
 //
 extern const game_export_t      *ge;
 extern const game_export_ex_t   *gex;
+extern game_export_ex_extensions_t gex_e;
 
 void SV_InitGameProgs(void);
 void SV_ShutdownGameProgs(void);
