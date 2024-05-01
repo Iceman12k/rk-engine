@@ -862,7 +862,7 @@ static void *PF_GetExtension(const char *name)
 {
     if (!name)
         return NULL;
-    if (!strcmp(name, "FILESYSTEM_API_V1"))
+    if (!Q_stricmp(name, "FILESYSTEM_API_V1"))
         return (void *)&filesystem_api_v1;
     return NULL;
 }
@@ -1017,7 +1017,7 @@ void SV_InitGameProgs(void)
         Com_Error(ERR_DROP, "Game library returned bad number of max_edicts");
     }
 
-	if (gex)
+	if (gex && gex->GetExtension)
 	{
 		gex_e.CustomizeEntityForClient = gex->GetExtension("CUSTOMIZEENTITYFORCLIENT");
 	}

@@ -311,7 +311,7 @@ typedef struct {
 } game_export_ex_t;
 
 typedef struct {
-	void 		(*CustomizeEntityForClient)(edict_t *viewer, edict_t *ent, entity_state_t *s);
+	qboolean 	(*CustomizeEntityForClient)(edict_t *viewer, edict_t *ent, entity_state_t *s);
 } game_export_ex_extensions_t;
 
 typedef const game_export_ex_t *(*game_entry_ex_t)(const game_import_ex_t *);

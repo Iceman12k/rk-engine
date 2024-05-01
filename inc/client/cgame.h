@@ -7,8 +7,9 @@ typedef struct edict_s edict_t;
 //
 typedef struct {
 	// special messages
-	void(*q_printf(1, 2) dprintf)(const char *fmt, ...);
-	void(*q_noreturn q_printf(1, 2) error)(const char *fmt, ...);
+	void	(*q_printf(1, 2) dprintf)(const char *fmt, ...);
+	void	(*q_noreturn q_printf(1, 2) error)(const char *fmt, ...);
+	void	*(*GetExtension)(const char *name);
 } cgame_import_t;
 
 //
@@ -20,13 +21,23 @@ typedef struct {
 	// the init function will only be called when a game starts,
 	// not each time a level is loaded.  Persistant data for clients
 	// and the server can be allocated in init
-	void(*Init)(void);
-	void(*Shutdown)(void);
-
-
+	void	(*Init)(void);
+	void	(*Shutdown)(void);
+	void	*(*GetExtension)(const char *name);
 } cgame_export_t;
 
+typedef struct {
+	void	(*UI_Render)(vec2_t screensize);
+} cgame_export_extensions_t;
+
 extern cgame_export_t *cge;
+extern cgame_export_extensions_t cge_e;
 typedef cgame_export_t *(*cgame_entry_t)(cgame_import_t *);
 
+// cgame.c
 void CG_InitGameProgs(void);
+void CG_ShutdownGameProgs(void);
+
+// screen.c
+void CG_R_DrawStretchPic(int x, int y, int w, int h, const char *name);
+void CG_R_DrawString(int x, int y, int flags, size_t maxChars, const char *string);

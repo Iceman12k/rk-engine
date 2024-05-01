@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 cgame_import_t   gi;
 cgame_export_t   globals;
+cgame_import_extensions_t gx;
 
 void Com_LPrintf(print_type_t type, const char *fmt, ...)
 {
@@ -76,6 +77,14 @@ static void CG_Shutdown(void)
 	//gi.FreeTags(TAG_GAME);
 }
 
+static void* CG_FetchGameExtension(char *name)
+{
+	Com_Printf("CGame: CG_FetchGameExtension for %s\n", name);
+	if (!Q_stricmp(name, "UI_RENDER"))
+		return *CG_UI_Render;
+	Com_Printf("CGame: Extension not found.\n");
+	return NULL;
+}
 
 /*
 =================
@@ -93,6 +102,13 @@ q_exported cgame_export_t *GetCGameAPI(cgame_import_t *import)
 	globals.apiversion = CGAME_API_VERSION;
 	globals.Init = CG_Init;
 	globals.Shutdown = CG_Shutdown;
+	globals.GetExtension = CG_FetchGameExtension;
+
+	if (gi.GetExtension)
+	{
+		gx.R_DrawStretchPic = gi.GetExtension("R_DRAWSTRETCHPIC");
+		gx.R_DrawString = gi.GetExtension("R_DRAWSTRING");
+	}
 
 	return &globals;
 }

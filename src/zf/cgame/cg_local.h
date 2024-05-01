@@ -55,6 +55,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define FL_HIDDEN               0x40000000  // used for banned items
 #define FL_RESPAWN              0x80000000  // used for item respawning
 
+// ui flags
+#define UI_LEFT             BIT(0)
+#define UI_RIGHT            BIT(1)
+#define UI_CENTER           (UI_LEFT | UI_RIGHT)
+#define UI_BOTTOM           BIT(2)
+#define UI_TOP              BIT(3)
+#define UI_MIDDLE           (UI_BOTTOM | UI_TOP)
+#define UI_DROPSHADOW       BIT(4)
+#define UI_ALTCOLOR         BIT(5)
+#define UI_IGNORECOLOR      BIT(6)
+#define UI_XORCOLOR         BIT(7)
+#define UI_AUTOWRAP         BIT(8)
+#define UI_MULTILINE        BIT(9)
+#define UI_DRAWCURSOR       BIT(10)
+
 #define MAX_ENT_CLUSTERS    16
 
 typedef struct edict_s edict_t;
@@ -99,9 +114,15 @@ struct edict_s {
 //
 typedef struct {
 	// special messages
-	void(*q_printf(1, 2) dprintf)(const char *fmt, ...);
-	void(*q_noreturn q_printf(1, 2) error)(const char *fmt, ...);
+	void		(*q_printf(1, 2) dprintf)(const char *fmt, ...);
+	void		(*q_noreturn q_printf(1, 2) error)(const char *fmt, ...);
+	void		*(*GetExtension)(const char *name);
 } cgame_import_t;
+
+typedef struct {
+	void 		(*R_DrawStretchPic)(int x, int y, int w, int h, const char *name);
+	void		(*R_DrawString)(int x, int y, int flags, size_t maxChars, const char *string);
+} cgame_import_extensions_t;
 
 //
 // functions exported by the game subsystem
@@ -109,19 +130,20 @@ typedef struct {
 typedef struct {
 	int         apiversion;
 
-	// the init function will only be called when a game starts,
-	// not each time a level is loaded.  Persistant data for clients
-	// and the server can be allocated in init
-	void(*Init)(void);
-	void(*Shutdown)(void);
-
-
+	void		(*Init)(void);
+	void		(*Shutdown)(void);
+	void		*(*GetExtension)(const char *name);
 } cgame_export_t;
 
 extern  cgame_import_t   gi;
 extern  cgame_export_t   globals;
+extern  cgame_import_extensions_t gx; 
 
 
 void    Com_LPrintf(print_type_t type, const char *fmt, ...);
 #define Com_Printf(...) Com_LPrintf(PRINT_ALL, __VA_ARGS__)
+
+// cg_ui.c
+void CG_UI_Render(vec2_t screensize);
+
 

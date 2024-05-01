@@ -123,6 +123,7 @@ game_src = [
 
 cgame_src = [
   'src/zf/cgame/cg_main.c',
+  'src/zf/cgame/cg_ui.c',
   'src/shared/m_flash.c',
   'src/shared/shared.c',
 ]

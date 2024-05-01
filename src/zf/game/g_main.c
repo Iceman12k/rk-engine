@@ -72,11 +72,11 @@ void Com_Error(error_type_t type, const char *fmt, ...)
 
 
 
-static int G_customizeentityforclient(edict_t *viewer, edict_t *ent, entity_state_t *state)
+static qboolean G_customizeentityforclient(edict_t *viewer, edict_t *ent, entity_state_t *state)
 {
 	// do whatever 'global' filtering
 	// dimension_see ?
-
+	
 	// predraw 
 	if (ent->predraw)
 		return ent->predraw(viewer, ent, state);
@@ -124,11 +124,13 @@ q_exported game_export_t *GetGameAPI(game_import_t *import)
 	return &globals;
 }
 
-q_exported game_export_ex_t *GetExtendedGameAPI(game_import_ex_t *importx)
+q_exported game_export_ex_t *GetGameAPIEx(game_import_ex_t *importx)
 {
 	gix = *importx;
-
+	
 	globalsx.apiversion = GAME_API_VERSION_EX;
+	globalsx.structsize = sizeof(game_export_ex_t);
+
 	globalsx.GetExtension = G_FetchGameExtension;
 
 #ifdef GAME_API_EXTENSIONS
@@ -136,8 +138,7 @@ q_exported game_export_ex_t *GetExtendedGameAPI(game_import_ex_t *importx)
 #endif
 
 
-
-	return NULL;//&globalsx;
+	return &globalsx;
 }
 
 

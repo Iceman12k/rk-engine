@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 // cl_scrn.c -- master for refresh, status bar, console, chat, notify, etc
 
 #include "client.h"
+#include "client/cgame.h"
 
 #define STAT_PICS       11
 #define STAT_MINUS      (STAT_PICS - 1)  // num frame for '-' stats digit
@@ -2084,11 +2085,22 @@ static void SCR_Draw2D(void)
     R_ClearColor();
     R_SetAlpha(Cvar_ClampValue(scr_alpha, 0, 1));
 
-    SCR_DrawStats();
+	if (cge_e.UI_Render)
+	{
+		vec2_t scrsz;
+		scrsz[0] = scr.hud_width;
+		scrsz[1] = scr.hud_height;
 
-    SCR_DrawLayout();
+		cge_e.UI_Render(scrsz);
+	}
+	else
+	{
+		SCR_DrawStats();
 
-    SCR_DrawInventory();
+		SCR_DrawLayout();
+
+		SCR_DrawInventory();
+	}
 
     SCR_DrawCenterString();
 
@@ -2201,4 +2213,14 @@ void SCR_UpdateScreen(void)
     R_EndFrame();
 
     recursive--;
+}
+
+void CG_R_DrawStretchPic(int x, int y, int w, int h, const char *name)
+{
+	R_DrawStretchPic(x, y, w, h, R_RegisterTempPic(name));
+}
+
+void CG_R_DrawString(int x, int y, int flags, size_t maxChars, const char *string)
+{
+	R_DrawString(x, y, flags, maxChars, string, scr.font_pic);
 }

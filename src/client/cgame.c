@@ -3,6 +3,7 @@
 
 static void *cgame_library;
 cgame_export_t *cge;
+cgame_export_extensions_t cge_e;
 
 
 static void PF_dprintf(const char *fmt, ...)
@@ -29,10 +30,23 @@ static q_noreturn void PF_error(const char *fmt, ...)
 	Com_Error(ERR_DROP, "Game Error: %s", msg);
 }
 
+static void *PF_CG_GetExtension(const char *name)
+{
+	if (!name)
+        return NULL;
+	if (!Q_stricmp(name, "R_DRAWSTRETCHPIC"))
+		return CG_R_DrawStretchPic;
+	if (!Q_stricmp(name, "R_DRAWSTRING"))
+		return CG_R_DrawString;
+	return NULL;
+}
+
 static const cgame_import_t cgame_import = {
 	.dprintf = PF_dprintf,
 	.error = PF_error,
+	.GetExtension = PF_CG_GetExtension,
 };
+
 
 /*
 ===============
@@ -43,6 +57,7 @@ it is changing to a different game directory.
 */
 void CG_ShutdownGameProgs(void)
 {
+	memset(&cge_e, 0, sizeof(cge_e)); // clear extension pointers
 	if (cge) {
 		cge->Shutdown();
 		cge = NULL;
@@ -141,6 +156,11 @@ void CG_InitGameProgs(void)
 
 	// initialize
 	cge->Init();
+
+	if (cge->GetExtension)
+	{
+		cge_e.UI_Render = cge->GetExtension("UI_RENDER");
+	}
 
 	/*
 	// sanitize edict_size
