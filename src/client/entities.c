@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 // cl_ents.c -- entity parsing and management
 
 #include "client.h"
+#include "client/cgame.h"
 
 extern qhandle_t cl_mod_powerscreen;
 extern qhandle_t cl_mod_laser;
@@ -247,8 +248,8 @@ static void set_active_state(void)
 {
     cls.state = ca_active;
 
-    cl.serverdelta = Q_align(cl.frame.number, CL_FRAMEDIV);
-    cl.time = cl.servertime = 0; // set time, needed for demos
+    cl.serverdelta = cgcl.serverdelta = Q_align(cl.frame.number, CL_FRAMEDIV);
+    cl.time = cl.servertime = cgcl.time = cgcl.servertime = 0; // set time, needed for demos
 #if USE_FPS
     cl.keytime = cl.keyservertime = 0;
     cl.keyframe = cl.frame; // initialize keyframe to make sure it's valid
@@ -379,7 +380,7 @@ void CL_DeltaFrame(void)
 
     // set server time
     framenum = cl.frame.number - cl.serverdelta;
-    cl.servertime = framenum * CL_FRAMETIME;
+    cl.servertime = cgcl.servertime = framenum * CL_FRAMETIME;
 #if USE_FPS
     cl.keyservertime = (framenum / cl.frametime.div) * BASE_FRAMETIME;
 #endif

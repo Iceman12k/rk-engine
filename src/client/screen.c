@@ -2090,7 +2090,7 @@ static void SCR_Draw2D(void)
 		vec2_t scrsz;
 		scrsz[0] = scr.hud_width;
 		scrsz[1] = scr.hud_height;
-
+		
 		cge_e.UI_Render(scrsz);
 	}
 	else

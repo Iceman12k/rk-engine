@@ -1,6 +1,14 @@
 #define CGAME_API_VERSION   1
 
-typedef struct edict_s edict_t;
+typedef struct {
+	server_frame_t 	frame;
+	server_frame_t 	oldframe;
+
+	int				servertime;
+	int				serverdelta;
+	int				time;
+	float			lerpfrac;
+} cgame_state_t;
 
 //
 // functions provided by the main engine
@@ -32,6 +40,7 @@ typedef struct {
 
 extern cgame_export_t *cge;
 extern cgame_export_extensions_t cge_e;
+extern cgame_state_t cgcl;
 typedef cgame_export_t *(*cgame_entry_t)(cgame_import_t *);
 
 // cgame.c

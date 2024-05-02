@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "client.h"
 #include "shared/m_flash.h"
+#include "client/cgame.h"
 
 /*
 =====================================================================
@@ -393,8 +394,8 @@ static void CL_ParseFrame(int extrabits)
     if (cls.state < ca_precached)
         return;
 
-    cl.oldframe = cl.frame;
-    cl.frame = frame;
+    cl.oldframe = cgcl.oldframe = cl.frame;
+    cl.frame = cgcl.frame = frame;
 
 #if USE_FPS
     if (CL_FRAMESYNC) {
@@ -1185,7 +1186,7 @@ static void set_server_fps(int value)
     // fix time delta
     if (cls.state == ca_active) {
         int delta = cl.frame.number - cl.servertime / cl.frametime.time;
-        cl.serverdelta = Q_align(delta, cl.frametime.div);
+        cl.serverdelta = cgcl.serverdelta = Q_align(delta, cl.frametime.div);
     }
 
     Com_DPrintf("client framediv=%d time=%d delta=%d\n",

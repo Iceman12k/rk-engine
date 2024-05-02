@@ -109,6 +109,38 @@ struct edict_s {
 	// EXPECTS THE FIELDS IN THAT ORDER!
 };
 
+
+#include "format/bsp.h"
+#define MAX_MAP_AREA_BYTES      (MAX_MAP_AREAS / 8)
+#define MAX_MAP_PORTAL_BYTES    128
+
+typedef struct {
+    bool            valid;
+
+    int             number;
+    int             delta;
+
+    byte            areabits[MAX_MAP_AREA_BYTES];
+    int             areabytes;
+
+    player_state_t  ps;
+    int             clientNum;
+
+    int             numEntities;
+    int             firstEntity;
+} server_frame_t;
+
+typedef struct {
+	server_frame_t 	frame;
+	server_frame_t 	oldframe;
+
+	int				servertime;
+	int				serverdelta;
+	int				time;
+	float			lerpfrac;
+} cgame_state_t;
+
+
 //
 // functions provided by the main engine
 //
@@ -138,6 +170,7 @@ typedef struct {
 extern  cgame_import_t   gi;
 extern  cgame_export_t   globals;
 extern  cgame_import_extensions_t gx; 
+extern  cgame_state_t    *cl;
 
 
 void    Com_LPrintf(print_type_t type, const char *fmt, ...);

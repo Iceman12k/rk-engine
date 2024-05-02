@@ -2953,6 +2953,9 @@ static void CL_SetClientTime(void)
         cl.lerpfrac = (cl.time - prevtime) * CL_1_FRAMETIME;
     }
 
+	cgcl.time = cl.time;
+	cgcl.lerpfrac = cl.lerpfrac;
+
     SHOWCLAMP(2, "time %d %d, lerpfrac %.3f\n",
               cl.time, cl.servertime, cl.lerpfrac);
 

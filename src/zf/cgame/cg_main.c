@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cgame_import_t   gi;
 cgame_export_t   globals;
 cgame_import_extensions_t gx;
+cgame_state_t    *cl;
 
 void Com_LPrintf(print_type_t type, const char *fmt, ...)
 {
@@ -108,6 +109,7 @@ q_exported cgame_export_t *GetCGameAPI(cgame_import_t *import)
 	{
 		gx.R_DrawStretchPic = gi.GetExtension("R_DRAWSTRETCHPIC");
 		gx.R_DrawString = gi.GetExtension("R_DRAWSTRING");
+		cl = gi.GetExtension("CG_CL_GAMESTATE");
 	}
 
 	return &globals;

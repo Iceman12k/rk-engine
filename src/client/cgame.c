@@ -4,6 +4,7 @@
 static void *cgame_library;
 cgame_export_t *cge;
 cgame_export_extensions_t cge_e;
+cgame_state_t cgcl;
 
 
 static void PF_dprintf(const char *fmt, ...)
@@ -34,10 +35,14 @@ static void *PF_CG_GetExtension(const char *name)
 {
 	if (!name)
         return NULL;
+	Com_Printf("Engine: PF_CG_GetExtension for %s\n", name);
 	if (!Q_stricmp(name, "R_DRAWSTRETCHPIC"))
 		return CG_R_DrawStretchPic;
 	if (!Q_stricmp(name, "R_DRAWSTRING"))
 		return CG_R_DrawString;
+	if (!Q_stricmp(name, "CG_CL_GAMESTATE"))
+		return &cgcl;
+	Com_Printf("Engine: Extension not found.\n");
 	return NULL;
 }
 
@@ -58,6 +63,7 @@ it is changing to a different game directory.
 void CG_ShutdownGameProgs(void)
 {
 	memset(&cge_e, 0, sizeof(cge_e)); // clear extension pointers
+	memset(&cgcl, 0, sizeof(cgcl)); // clear cgame state
 	if (cge) {
 		cge->Shutdown();
 		cge = NULL;
@@ -157,6 +163,8 @@ void CG_InitGameProgs(void)
 	// initialize
 	cge->Init();
 
+	memset(&cge_e, 0, sizeof(cge_e));
+	memset(&cgcl, 0, sizeof(cgcl));
 	if (cge->GetExtension)
 	{
 		cge_e.UI_Render = cge->GetExtension("UI_RENDER");
