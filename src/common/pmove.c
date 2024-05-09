@@ -178,6 +178,7 @@ static void PM_StepSlideMove_(void)
                 break;
             }
             CrossProduct(planes[0], planes[1], dir);
+			VectorNormalize(dir);
             d = DotProduct(dir, pml.velocity);
             VectorScale(dir, d, pml.velocity);
         }
@@ -361,10 +362,10 @@ static void PM_AddCurrents(vec3_t wishvel)
     //
 
     if (pml.ladder && fabsf(pml.velocity[2]) <= 200) {
-        if ((pm->viewangles[PITCH] <= -15) && (pm->cmd.forwardmove > 0))
-            wishvel[2] = 200;
-        else if ((pm->viewangles[PITCH] >= 15) && (pm->cmd.forwardmove > 0))
+        if ((pm->viewangles[PITCH] >= 25) && (pm->cmd.forwardmove > 0))
             wishvel[2] = -200;
+		else if (pm->cmd.forwardmove > 0)
+            wishvel[2] = 200;
         else if (pm->cmd.upmove > 0)
             wishvel[2] = 200;
         else if (pm->cmd.upmove < 0)
@@ -930,7 +931,7 @@ static void PM_SnapPosition(void)
 
     // snap velocity to eigths
     for (i = 0; i < 3; i++)
-        pm->s.velocity[i] = (int)(pml.velocity[i] * 8);
+        pm->s.velocity[i] = Q_rint(pml.velocity[i] * 8);
 
     for (i = 0; i < 3; i++) {
         if (pml.origin[i] >= 0)
@@ -950,6 +951,17 @@ static void PM_SnapPosition(void)
         for (i = 0; i < 3; i++)
             if (bits & (1 << i))
                 pm->s.origin[i] += sign[i];
+
+        if (PM_GoodPosition())
+            return;
+    }
+
+	for (j = 0; j < 8; j++) {
+        bits = jitterbits[j];
+        VectorCopy(base, pm->s.origin);
+        for (i = 0; i < 3; i++)
+            if (bits & (1 << i))
+                pm->s.origin[i] -= sign[i];
 
         if (PM_GoodPosition())
             return;
