@@ -110,6 +110,9 @@ q_exported cgame_export_t *GetCGameAPI(cgame_import_t *import)
 		gx.R_DrawStretchPic = gi.GetExtension("R_DRAWSTRETCHPIC");
 		gx.R_DrawString = gi.GetExtension("R_DRAWSTRING");
 		cl = gi.GetExtension("CG_CL_GAMESTATE");
+
+		gx.R_SetClipArea = gi.GetExtension("R_SETCLIPAREA");
+		gx.R_ResetClipArea = gi.GetExtension("R_RESETCLIPAREA");
 	}
 
 	return &globals;

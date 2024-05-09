@@ -50,3 +50,5 @@ void CG_ShutdownGameProgs(void);
 // screen.c
 void CG_R_DrawStretchPic(int x, int y, int w, int h, const char *name);
 void CG_R_DrawString(int x, int y, int flags, size_t maxChars, const char *string);
+void CG_R_SetClipArea(int x, int y, int w, int h);
+void CG_R_ResetClipArea(void);

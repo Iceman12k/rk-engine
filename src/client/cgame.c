@@ -42,6 +42,10 @@ static void *PF_CG_GetExtension(const char *name)
 		return CG_R_DrawString;
 	if (!Q_stricmp(name, "CG_CL_GAMESTATE"))
 		return &cgcl;
+	if (!Q_stricmp(name, "R_SETCLIPAREA"))
+		return CG_R_SetClipArea;
+	if (!Q_stricmp(name, "R_RESETCLIPAREA"))
+		return CG_R_ResetClipArea;
 	Com_Printf("Engine: Extension not found.\n");
 	return NULL;
 }

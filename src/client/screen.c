@@ -2224,3 +2224,18 @@ void CG_R_DrawString(int x, int y, int flags, size_t maxChars, const char *strin
 {
 	R_DrawString(x, y, flags, maxChars, string, scr.font_pic);
 }
+
+void CG_R_SetClipArea(int x, int y, int w, int h)
+{
+	clipRect_t rc;
+	rc.left = x;
+	rc.right = x + w;
+	rc.top = y;
+	rc.bottom = y + h;
+	R_SetClipRect(&rc);
+}
+
+void CG_R_ResetClipArea(void)
+{
+	R_SetClipRect(NULL);
+}

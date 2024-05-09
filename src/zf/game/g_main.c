@@ -72,14 +72,14 @@ void Com_Error(error_type_t type, const char *fmt, ...)
 
 
 
-static qboolean G_customizeentityforclient(edict_t *viewer, edict_t *ent, entity_state_t *state)
+static qboolean G_customizeentityforclient(edict_t *viewer, edict_t *ent, customize_entity_t *c)
 {
 	// do whatever 'global' filtering
 	// dimension_see ?
-	
-	// predraw 
+
+	// predraw
 	if (ent->predraw)
-		return ent->predraw(viewer, ent, state);
+		return ent->predraw(viewer, ent, &(c->s), &(c->x));
 	return true;
 }
 

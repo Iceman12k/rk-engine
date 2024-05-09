@@ -17,8 +17,10 @@ void SP_func_illusionary(edict_t *ent);
 
 void SP_item_health(edict_t *ent)
 {
-    ent->model = "models/items/armor/shard/tris.md2";
+    //ent->model = "models/items/armor/shard/tris.md2";
+	ent->model = "models/items/armor/armor.md2";
 	ent->s.modelindex = gi.modelindex(ent->model);
+	ent->s.skinnum = (int)(random() * 3);
 	ent->s.effects = EF_ROTATE | EF_BOB;
 	ent->s.renderfx = RF_GLOW; 
 	//ent->x.morefx = EFX_BILLBOARD;

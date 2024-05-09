@@ -385,6 +385,10 @@ void ClientEndServerFrame(edict_t *ent)
 	client->levelframenum = level.framenum;
 	client->leveltime = level.time;
 	//
+
+	// update stats
+	client->ps.stats[STAT_ARMOR] = 0;
+	client->ps.stats[STAT_HEALTH] = 100;
 }
 
 
