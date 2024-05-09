@@ -476,9 +476,7 @@ void SV_BuildClientFrame(client_t *client)
     frame->first_entity = svs.next_entity;
 
     for (e = 1; e < client->ge->num_edicts; e++) {
-		entity_state_t ent_state;
         ent = EDICT_NUM2(client->ge, e);
-		ent_state = ent->s;
 
         // ignore entities not in use
         if (!ent->inuse && (g_features->integer & GMF_PROPERINUSE)) {
@@ -540,13 +538,18 @@ void SV_BuildClientFrame(client_t *client)
             ent->s.number = e;
         }
 
+		customize_entity_t cust; // bleh, need this for entity state extensions, kinda mauled version of skuller's implementation
+		cust.s = ent->s;
+		cust.x = ent->x;
 		if (gex_e.CustomizeEntityForClient)
-			if (!gex_e.CustomizeEntityForClient(client->edict, ent, &ent_state))
+		{
+			if (!gex_e.CustomizeEntityForClient(client->edict, ent, &cust))
 				continue;
+		}
 
         // add it to the circular client_entities array
         state = &svs.entities[svs.next_entity % svs.num_entities];
-        MSG_PackEntity(state, &ent_state, ENT_EXTENSION(client->csr, ent));
+        MSG_PackEntity(state, &cust.s, ENT_EXTENSION(client->csr, &cust));
 
 #if USE_FPS
         // fix old entity origins for clients not running at
