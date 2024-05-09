@@ -115,6 +115,7 @@ game_src = [
   'src/zf/game/g_utils.c',
   'src/zf/game/g_phys.c',
   'src/zf/game/g_world.c',
+  'src/zf/game/g_networking.c',
   'src/zf/game/p_base.c',
   'src/zf/game/p_cmd.c',
   'src/shared/m_flash.c',
@@ -124,6 +125,7 @@ game_src = [
 cgame_src = [
   'src/zf/cgame/cg_main.c',
   'src/zf/cgame/cg_ui.c',
+  'src/zf/cgame/cg_networking.c',
   'src/shared/m_flash.c',
   'src/shared/shared.c',
 ]

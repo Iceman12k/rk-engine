@@ -50,10 +50,29 @@ static void *PF_CG_GetExtension(const char *name)
 	return NULL;
 }
 
+static float PF_ReadFloat(void)
+{
+	float f;
+	int tp;
+	tp = MSG_ReadLong();
+    memcpy(&f, &tp, sizeof(f));
+
+	return f;
+}
+
 static const cgame_import_t cgame_import = {
 	.dprintf = PF_dprintf,
 	.error = PF_error,
 	.GetExtension = PF_CG_GetExtension,
+	
+    .ReadChar = MSG_ReadChar,
+    .ReadByte = MSG_ReadByte,
+    .ReadShort = MSG_ReadShort,
+    .ReadLong = MSG_ReadLong,
+    .ReadFloat = PF_ReadFloat,
+    .ReadString = MSG_ReadString,
+    .ReadPosition = MSG_ReadPos,
+    .ReadDir = MSG_ReadDir,
 };
 
 
@@ -172,6 +191,7 @@ void CG_InitGameProgs(void)
 	if (cge->GetExtension)
 	{
 		cge_e.UI_Render = cge->GetExtension("UI_RENDER");
+		cge_e.CG_ReadDeltaEntity = cge->GetExtension("READDELTAENTITY");
 	}
 
 	/*

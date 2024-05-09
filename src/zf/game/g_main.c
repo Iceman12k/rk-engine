@@ -89,6 +89,8 @@ static void* G_FetchGameExtension(char *name)
 	Com_Printf("Game: G_FetchGameExtension for %s\n", name);
 	if (!Q_stricmp(name, "CUSTOMIZEENTITYFORCLIENT"))
 		return *G_customizeentityforclient;
+	if (!Q_stricmp(name, "WRITEDELTAENTITY"))
+		return *GAME_WriteDeltaEntity;
 	Com_Printf("Game: Extension not found.\n");
 	return NULL;
 }

@@ -47,7 +47,7 @@ typedef struct {
     uint8_t     loop_volume;
     uint8_t     loop_attenuation;
 	union {
-		uint8_t 	data[64];
+		uint8_t 	dat[64];
 		struct {
 		};
 	};
@@ -67,7 +67,7 @@ typedef struct {
     uint8_t         rdflags;
     int16_t         stats[MAX_STATS];
 	union {
-		uint8_t 	data[64];
+		uint8_t 	dat[64];
 		struct {
 		};
 	};

@@ -29,12 +29,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // because we define the full size ones in this file
 #define CGAME_INCLUDE
 #define GAME_INCLUDE
+#define USE_PROTOCOL_EXTENSIONS 1
 
 #include "shared/shared.h"
 #include "../q_shared.h"
 
 #include "../q_list.h"
 #include "../gameplay.h"
+
+#include "common/protocol.h"
 
 // the "gameversion" client command will print this plus compile date
 #define GAMEVERSION "ZynFyr"
@@ -153,6 +156,15 @@ typedef struct {
 	void		(*q_printf(1, 2) dprintf)(const char *fmt, ...);
 	void		(*q_noreturn q_printf(1, 2) error)(const char *fmt, ...);
 	void		*(*GetExtension)(const char *name);
+
+	int 	(*ReadChar)(void);
+	int 	(*ReadByte)(void);
+	int 	(*ReadShort)(void);
+	int 	(*ReadLong)(void);
+	float 	(*ReadFloat)(void);
+	void 	(*ReadString)(char *dest, size_t size);
+	void 	(*ReadPosition)(vec3_t pos);			// some fractional bits
+	void 	(*ReadDir)(vec3_t pos);					// single byte encoded, very coarse
 } cgame_import_t;
 
 typedef struct {
@@ -183,6 +195,9 @@ extern  cgame_state_t    *cl;
 
 void    Com_LPrintf(print_type_t type, const char *fmt, ...);
 #define Com_Printf(...) Com_LPrintf(PRINT_ALL, __VA_ARGS__)
+
+// cg_networking.c
+void CG_ReadDeltaEntity(entity_state_t *to, entity_state_extension_t *ext, int number, uint64_t bits, msgEsFlags_t flags);
 
 // cg_ui.c
 void CG_UI_Render(vec2_t screensize);

@@ -18,6 +18,15 @@ typedef struct {
 	void	(*q_printf(1, 2) dprintf)(const char *fmt, ...);
 	void	(*q_noreturn q_printf(1, 2) error)(const char *fmt, ...);
 	void	*(*GetExtension)(const char *name);
+
+	int 	(*ReadChar)(void);
+	int 	(*ReadByte)(void);
+	int 	(*ReadShort)(void);
+	int 	(*ReadLong)(void);
+	float 	(*ReadFloat)(void);
+	void 	(*ReadString)(char *dest, size_t size);
+	void 	(*ReadPosition)(vec3_t pos);			// some fractional bits
+	void 	(*ReadDir)(vec3_t pos);					// single byte encoded, very coarse
 } cgame_import_t;
 
 //
@@ -36,6 +45,7 @@ typedef struct {
 
 typedef struct {
 	void	(*UI_Render)(vec2_t screensize);
+	void	(*CG_ReadDeltaEntity)(entity_state_t *to, entity_state_extension_t *ext, int number, uint64_t bits, msgEsFlags_t flags);
 } cgame_export_extensions_t;
 
 extern cgame_export_t *cge;

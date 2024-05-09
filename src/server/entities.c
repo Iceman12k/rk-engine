@@ -37,6 +37,7 @@ SV_EmitPacketEntities
 Writes a delta update of an entity_packed_t list to the message.
 =============
 */
+extern void G_MSG_WriteDeltaEntity(const entity_packed_t *from, const entity_packed_t *to, msgEsFlags_t flags);
 static void SV_EmitPacketEntities(client_t         *client,
                                   client_frame_t   *from,
                                   client_frame_t   *to,
@@ -92,7 +93,8 @@ static void SV_EmitPacketEntities(client_t         *client,
                 VectorCopy(oldent->origin, newent->origin);
                 VectorCopy(oldent->angles, newent->angles);
             }
-            MSG_WriteDeltaEntity(oldent, newent, flags);
+            //MSG_WriteDeltaEntity(oldent, newent, flags);
+			G_MSG_WriteDeltaEntity(oldent, newent, flags);
             oldindex++;
             newindex++;
             continue;
@@ -112,14 +114,16 @@ static void SV_EmitPacketEntities(client_t         *client,
                 VectorCopy(oldent->origin, newent->origin);
                 VectorCopy(oldent->angles, newent->angles);
             }
-            MSG_WriteDeltaEntity(oldent, newent, flags);
+            //MSG_WriteDeltaEntity(oldent, newent, flags);
+			G_MSG_WriteDeltaEntity(oldent, newent, flags);
             newindex++;
             continue;
         }
 
         if (newnum > oldnum) {
             // the old entity isn't present in the new message
-            MSG_WriteDeltaEntity(oldent, NULL, MSG_ES_FORCE);
+            //MSG_WriteDeltaEntity(oldent, NULL, MSG_ES_FORCE);
+			G_MSG_WriteDeltaEntity(oldent, NULL, MSG_ES_FORCE);
             oldindex++;
             continue;
         }

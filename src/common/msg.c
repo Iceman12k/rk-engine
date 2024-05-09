@@ -493,6 +493,7 @@ void MSG_PackEntity(entity_packed_t *out, const entity_state_t *in, const entity
         if (out->scale == 16) out->scale = 0;
         if (out->loop_volume == 255) out->loop_volume = 0;
     }
+	memcpy(out->dat, in->dat, sizeof(out->dat));
 }
 
 void MSG_WriteDeltaEntity(const entity_packed_t *from,
@@ -801,6 +802,7 @@ void MSG_PackPlayer(player_packed_t *out, const player_state_t *in)
     out->rdflags = in->rdflags;
     for (i = 0; i < MAX_STATS; i++)
         out->stats[i] = in->stats[i];
+	memcpy(out->dat, in->dat, sizeof(out->dat));
 }
 
 void MSG_WriteDeltaPlayerstate_Default(const player_packed_t *from, const player_packed_t *to, msgPsFlags_t flags)

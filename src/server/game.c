@@ -440,7 +440,9 @@ static const char *PF_GetConfigstring(int index)
 
 static void PF_WriteFloat(float f)
 {
-    Com_Error(ERR_DROP, "PF_WriteFloat not implemented");
+	int tp;
+    memcpy(&tp, &f, sizeof(tp));
+	MSG_WriteLong(tp);
 }
 
 static qboolean PF_inVIS(const vec3_t p1, const vec3_t p2, vis_t vis)
@@ -1020,5 +1022,22 @@ void SV_InitGameProgs(void)
 	if (gex && gex->GetExtension)
 	{
 		gex_e.CustomizeEntityForClient = gex->GetExtension("CUSTOMIZEENTITYFORCLIENT");
+		gex_e.WriteDeltaEntity = gex->GetExtension("WRITEDELTAENTITY");
+		//gex_e.WriteDeltaPlayer = gex->GetExtension("WRITEDELTAPLAYER");
 	}
 }
+
+
+// MSG Replacements
+void G_MSG_WriteDeltaEntity(const entity_packed_t *from, const entity_packed_t *to, msgEsFlags_t flags)
+{
+	if (gex_e.WriteDeltaEntity)
+	{
+		gex_e.WriteDeltaEntity(from, to, flags);
+		return;
+	}
+
+	MSG_WriteDeltaEntity(from, to, flags);
+}
+//
+

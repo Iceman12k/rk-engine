@@ -1703,8 +1703,6 @@ void CL_Begin(void)
 
     CL_ClientCommand(va("begin %i\n", precache_spawncount));
 
-	CG_InitGameProgs();
-
     CL_UpdateGunSetting();
     CL_UpdateBlendSetting();
     CL_UpdateGibSetting();

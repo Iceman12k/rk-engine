@@ -28,6 +28,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "shared/list.h"
 #include "shared/game.h"
+#include "common/protocol.h"
 
 #define EDICT_NUM(n) ((edict_t *)((byte *)g_edicts + sizeof(g_edicts[0])*(n)))
 #define NUM_FOR_EDICT(e) ((int)(((byte *)(e) - (byte *)g_edicts) / sizeof(g_edicts[0])))
@@ -39,6 +40,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define GAMEVERSION "zynfyr-q2"
 
 // protocol bytes that can be directly added to messages
+/*
 #define svc_muzzleflash     1
 #define svc_muzzleflash2    2
 #define svc_temp_entity     3
@@ -46,6 +48,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define svc_inventory       5
 #define svc_stufftext       11
 #define svc_configstring	13
+*/
 
 #define TAG_GAME    765     // clear when unloading the dll
 #define TAG_LEVEL   766     // clear when loading a new level
@@ -385,6 +388,11 @@ extern  cvar_t  *flood_waitdelay;
 //
 void* WriteData(const void *data, size_t len);
 void ClientEndServerFrames(void);
+
+//
+// g_networking.c
+//
+void GAME_WriteDeltaEntity(const entity_packed_t *from, const entity_packed_t *to, msgEsFlags_t flags);
 
 //
 // g_utils.c 

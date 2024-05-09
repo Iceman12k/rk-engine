@@ -1445,8 +1445,7 @@ typedef struct {
 	};
 } player_state_t;
 #else // GAME_INCLUDE
-typedef struct entity_state_t;
-typedef struct player_state_t;
+
 #endif // GAME_INCLUDE
 
 //==============================================

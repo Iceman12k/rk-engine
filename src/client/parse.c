@@ -53,7 +53,10 @@ static void CL_ParseDeltaEntity(server_frame_t           *frame,
 #endif
 
     *state = *old;
-    MSG_ParseDeltaEntity(&state->s, &state->x, newnum, bits, cl.esFlags);
+	if (cge_e.CG_ReadDeltaEntity)
+		cge_e.CG_ReadDeltaEntity(&state->s, &state->x, newnum, bits, cl.esFlags);
+    else
+		MSG_ParseDeltaEntity(&state->s, &state->x, newnum, bits, cl.esFlags);
 
     // shuffle previous origin to old
     if (!(bits & U_OLDORIGIN) && !(state->renderfx & RF_BEAM))
@@ -469,7 +472,11 @@ static void CL_ParseBaseline(int index, uint64_t bits)
 #endif
 
     base = &cl.baselines[index];
-    MSG_ParseDeltaEntity(&base->s, &base->x, index, bits, cl.esFlags);
+   // MSG_ParseDeltaEntity(&base->s, &base->x, index, bits, cl.esFlags);
+   	if (cge_e.CG_ReadDeltaEntity)
+		cge_e.CG_ReadDeltaEntity(&base->s, &base->x, index, bits, cl.esFlags);
+    else
+		MSG_ParseDeltaEntity(&base->s, &base->x, index, bits, cl.esFlags);
 }
 
 // instead of wasting space for svc_configstring and svc_spawnbaseline
@@ -510,6 +517,9 @@ static void CL_ParseServerData(void)
 
     // wipe the client_state_t struct
     CL_ClearState();
+
+	// start up cgame
+	CG_InitGameProgs();
 
     // parse protocol version number
     protocol = MSG_ReadLong();

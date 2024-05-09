@@ -126,9 +126,11 @@ static void write_configstrings(void)
     SV_ClientAddMessage(sv_client, MSG_GAMESTATE);
 }
 
+extern void G_MSG_WriteDeltaEntity(const entity_packed_t *from, const entity_packed_t *to, msgEsFlags_t flags);
 static void write_baseline(const entity_packed_t *base)
 {
-    MSG_WriteDeltaEntity(NULL, base, sv_client->esFlags | MSG_ES_FORCE);
+	//MSG_WriteDeltaEntity(NULL, base, sv_client->esFlags | MSG_ES_FORCE);
+	G_MSG_WriteDeltaEntity(NULL, base, sv_client->esFlags | MSG_ES_FORCE);
 }
 
 static void write_baselines(void)

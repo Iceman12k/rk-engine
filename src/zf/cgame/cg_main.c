@@ -83,6 +83,8 @@ static void* CG_FetchGameExtension(char *name)
 	Com_Printf("CGame: CG_FetchGameExtension for %s\n", name);
 	if (!Q_stricmp(name, "UI_RENDER"))
 		return *CG_UI_Render;
+	else if (!Q_stricmp(name, "READDELTAENTITY"))
+		return *CG_ReadDeltaEntity;
 	Com_Printf("CGame: Extension not found.\n");
 	return NULL;
 }

@@ -317,6 +317,7 @@ typedef struct {
 
 typedef struct {
 	qboolean 	(*CustomizeEntityForClient)(edict_t *viewer, edict_t *ent, customize_entity_t *c);
+	void		(*WriteDeltaEntity)(const void *from, const void *to, int flags);
 } game_export_ex_extensions_t;
 
 typedef const game_export_ex_t *(*game_entry_ex_t)(const game_import_ex_t *);
