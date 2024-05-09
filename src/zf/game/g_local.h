@@ -17,13 +17,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 // g_local.h -- local definitions for game module
 
-#include "shared/shared.h"
-#include "shared/list.h"
-
 // define GAME_INCLUDE so that game.h does not define the
 // short, server-visible gclient_t and edict_t structures,
 // because we define the full size ones in this file
 #define GAME_INCLUDE
+#define USE_PROTOCOL_EXTENSIONS 1
+
+#include "shared/shared.h"
+#include "../q_shared.h"
+
+#include "shared/list.h"
 #include "shared/game.h"
 
 #define EDICT_NUM(n) ((edict_t *)((byte *)g_edicts + sizeof(g_edicts[0])*(n)))
@@ -323,7 +326,7 @@ struct edict_s {
 	float		mass;
 
 	// custom
-	int			(*predraw)(edict_t *v, edict_t *e, entity_state_t *s);
+	int			(*predraw)(edict_t *v, edict_t *e, entity_state_t *s, entity_state_extension_t *x);
 	int			(*physics)(edict_t *e);
 };
 

@@ -1379,6 +1379,7 @@ typedef enum {
 // KEX
 } entity_event_t;
 
+#ifndef GAME_INCLUDE
 // entity_state_t is the information conveyed from the server
 // in an update message about entities that the client will
 // need to render in some way
@@ -1401,6 +1402,11 @@ typedef struct entity_state_s {
     int     event;          // impulse events -- muzzle flashes, footsteps, etc
                             // events only go out for a single frame, they
                             // are automatically cleared each frame
+	union {
+		uint8_t dat[64];
+		struct {
+		};
+	};
 } entity_state_t;
 
 //==============================================
@@ -1431,7 +1437,17 @@ typedef struct {
     int         rdflags;        // refdef flags
 
     short       stats[MAX_STATS];       // fast status bar updates
+
+	union {
+		uint8_t dat[64];
+		struct {
+		};
+	};
 } player_state_t;
+#else // GAME_INCLUDE
+typedef struct entity_state_t;
+typedef struct player_state_t;
+#endif // GAME_INCLUDE
 
 //==============================================
 

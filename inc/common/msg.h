@@ -46,6 +46,11 @@ typedef struct {
     uint8_t     scale;
     uint8_t     loop_volume;
     uint8_t     loop_attenuation;
+	union {
+		uint8_t 	data[64];
+		struct {
+		};
+	};
 } entity_packed_t;
 
 typedef struct {
@@ -61,6 +66,11 @@ typedef struct {
     uint8_t         fov;
     uint8_t         rdflags;
     int16_t         stats[MAX_STATS];
+	union {
+		uint8_t 	data[64];
+		struct {
+		};
+	};
 } player_packed_t;
 
 typedef enum {

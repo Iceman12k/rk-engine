@@ -288,6 +288,11 @@ typedef enum {
 } vis_t;
 
 typedef struct {
+    entity_state_t s;
+    entity_state_extension_t x;
+} customize_entity_t;
+
+typedef struct {
     uint32_t    apiversion;
     uint32_t    structsize;
 
@@ -311,7 +316,7 @@ typedef struct {
 } game_export_ex_t;
 
 typedef struct {
-	qboolean 	(*CustomizeEntityForClient)(edict_t *viewer, edict_t *ent, entity_state_t *s);
+	qboolean 	(*CustomizeEntityForClient)(edict_t *viewer, edict_t *ent, customize_entity_t *c);
 } game_export_ex_extensions_t;
 
 typedef const game_export_ex_t *(*game_entry_ex_t)(const game_import_ex_t *);

@@ -19,9 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // g_local.h -- local definitions for game module
 
-#include "shared/shared.h"
-#include "../q_list.h"
-
 #define CGAME_API_VERSION 1
 
 #define TAG_GAME    765     // clear when unloading the dll
@@ -30,7 +27,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // define GAME_INCLUDE so that game.h does not define the
 // short, server-visible gclient_t and edict_t structures,
 // because we define the full size ones in this file
+#define CGAME_INCLUDE
 #define GAME_INCLUDE
+
+#include "shared/shared.h"
+#include "../q_shared.h"
+
+#include "../q_list.h"
+#include "../gameplay.h"
 
 // the "gameversion" client command will print this plus compile date
 #define GAMEVERSION "ZynFyr"
@@ -154,6 +158,8 @@ typedef struct {
 typedef struct {
 	void 		(*R_DrawStretchPic)(int x, int y, int w, int h, const char *name);
 	void		(*R_DrawString)(int x, int y, int flags, size_t maxChars, const char *string);
+	void 		(*R_SetClipArea)(int x, int y, int w, int h);
+	void 		(*R_ResetClipArea)(void);
 } cgame_import_extensions_t;
 
 //
@@ -172,6 +178,8 @@ extern  cgame_export_t   globals;
 extern  cgame_import_extensions_t gx; 
 extern  cgame_state_t    *cl;
 
+#define clamp(a,b,c) (a = (a <= c) ? ((a >= b) ? (a) : (b)) : (c))
+#define bound(a,b,c) ((a) >= (c) ? (a) : (b) < (a) ? (a) : (b) > (c) ? (c) : (b))
 
 void    Com_LPrintf(print_type_t type, const char *fmt, ...);
 #define Com_Printf(...) Com_LPrintf(PRINT_ALL, __VA_ARGS__)
