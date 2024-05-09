@@ -2189,7 +2189,7 @@ void SV_Init(void)
     sv_timescale_kick = Cvar_Get("sv_timescale_kick", "0", 0);
     sv_allow_nodelta = Cvar_Get("sv_allow_nodelta", "1", 0);
 #if USE_FPS
-    sv_fps = Cvar_Get("sv_fps", "10", CVAR_LATCH);
+    sv_fps = Cvar_Get("sv_fps", "30", CVAR_LATCH);
 #endif
     sv_force_reconnect = Cvar_Get("sv_force_reconnect", "", CVAR_LATCH);
     sv_show_name_changes = Cvar_Get("sv_show_name_changes", "0", 0);
