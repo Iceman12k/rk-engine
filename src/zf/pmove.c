@@ -16,7 +16,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#define GAME_INCLUDE
 #include "shared/shared.h"
+#include "q_shared.h"
 #include "pmove.h"
 
 const pmoveParams_t global_pmp = {
@@ -1046,7 +1048,7 @@ Pmove
 Can be called by either the server or the client
 ================
 */
-void Pmove(pmove_t *pmove, const pmoveParams_t *params)
+void Pmove(pmove_t *pmove, pweapon_state_t *pweapon, const pmoveParams_t *params)
 {
     pm = pmove;
     pmp = params;

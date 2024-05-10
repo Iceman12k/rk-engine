@@ -219,7 +219,6 @@ void CL_PredictMovement(void)
 	if (cge_e.CG_RunPrediction)
 	{
 		cgcl.cmd = cl.cmd;
-		cgcl.pmp = cl.pmp;
 		//VectorCopy(pm.s.origin, cl.predicted_origins[(current + 1) & CMD_MASK]);
 		memcpy(cgcl.predicted_origins, cl.predicted_origins, sizeof(cl.predicted_origins));
 		memcpy(cgcl.cmds, cl.cmds, sizeof(cl.cmds));

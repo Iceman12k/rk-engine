@@ -43,7 +43,5 @@ typedef struct {
 } pmoveParams_t;
 
 extern const pmoveParams_t global_pmp;
-void Pmove(pmove_t *pmove, const pmoveParams_t *params);
-
 void PmoveInit(pmoveParams_t *pmp);
 void PmoveEnableQW(pmoveParams_t *pmp);

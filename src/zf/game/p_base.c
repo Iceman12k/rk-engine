@@ -158,6 +158,7 @@ void ClientThink(edict_t *ent, usercmd_t *ucmd)
 	edict_t *other;
 	int     i, j;
 	pmove_t pm;
+	pweapon_state_t pw;
 
 	level.current_entity = ent;
 	client = ent->client;
@@ -167,6 +168,7 @@ void ClientThink(edict_t *ent, usercmd_t *ucmd)
 
 	// set up for pmove
 	memset(&pm, 0, sizeof(pm));
+	pw = client->ps.pwep;
 
 	client->ps.pmove.pm_type = PM_NORMAL;
 
@@ -218,7 +220,7 @@ void ClientThink(edict_t *ent, usercmd_t *ucmd)
 
 	// perform a pmove
 	//gi.Pmove(&pm);
-	Pmove(&pm, &global_pmp);
+	Pmove(&pm, &pw, &global_pmp);
 
 	for (i = 0; i < 3; i++) {
 		ent->s.origin[i] = SHORT2COORD(pm.s.origin[i]);

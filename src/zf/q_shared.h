@@ -1,5 +1,7 @@
 
 
+#include "pmove.h"
+
 // player state
 enum {
 	AMMO_SHELLS,
@@ -163,6 +165,8 @@ typedef enum {
     MSG_ES_REMOVE       = BIT(8),   // entity is removed (MVD stream only)
 } msgEsFlags_t;
 //
+
+void Pmove(pmove_t *pmove, pweapon_state_t *pweapon, const pmoveParams_t *params);
 
 #define ANGLE2BYTE(x)   ((int)((x)*256.0f/360)&255)
 #define BYTE2ANGLE(x)   ((x)*(360.0f/256))
