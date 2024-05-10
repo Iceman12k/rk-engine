@@ -133,10 +133,69 @@ void CG_ReadDeltaEntity(entity_state_t *to, entity_state_extension_t *ext, int n
 		if (bits & U_SCALE)
 			ext->scale = MSG_ReadByte() / 16.0f;
 	}
-
-	
 }
 
+
+
+// prediction
+static int pm_clipmask;
+trace_t q_gameabi PM_trace(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end)
+{
+	return gi.trace(start, mins, maxs, end, pm_clipmask);
+}
+
+void CG_RunPrediction(pmove_t *pm, int *o_current, int *o_ack, int *o_frame)
+{
+	pm_clipmask = MASK_PLAYERSOLID;
+	int current, ack, frame;
+	current = *o_current;
+	ack = *o_ack;
+	frame = *o_frame;
+
+	// remaster player collision rules
+	if (cl->frame.ps.pmove.pm_type == PM_DEAD || cl->frame.ps.pmove.pm_type == PM_GIB)
+		pm_clipmask = MASK_DEADSOLID;
+
+	if (!(cl->frame.ps.pmove.pm_flags & PMF_IGNORE_PLAYER_COLLISION))
+		pm_clipmask |= CONTENTS_PLAYER;
+
+	// copy current state to pmove
+	memset(pm, 0, sizeof(pm));
+	pm->trace = PM_trace;
+	pm->pointcontents = gi.pointcontents;
+	pm->s = cl->frame.ps.pmove;
+
+	// run frames
+	while (++ack <= current) {
+		pm->cmd = cl->cmds[ack & CMD_MASK];
+		Pmove(pm, &cl->pmp);
+
+		// save for debug checking
+		VectorCopy(pm->s.origin, cl->predicted_origins[ack & CMD_MASK]);
+	}
+
+	// run pending cmd
+	#if 1
+	if (cl->cmd.msec) {
+		pm->cmd = cl->cmd;
+		pm->cmd.forwardmove = cl->localmove[0];
+		pm->cmd.sidemove = cl->localmove[1];
+		pm->cmd.upmove = cl->localmove[2];
+		Pmove(pm, &cl->pmp);
+		frame = current;
+
+		// save for debug checking
+		VectorCopy(pm->s.origin, cl->predicted_origins[(current + 1) & CMD_MASK]);
+	} else {
+		frame = current - 1;
+	}
+	#endif
+
+
+	*o_current = current;
+	*o_ack = ack;
+	*o_frame = frame;
+}
 
 
 

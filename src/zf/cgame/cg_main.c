@@ -85,6 +85,8 @@ static void* CG_FetchGameExtension(char *name)
 		return *CG_UI_Render;
 	else if (!Q_stricmp(name, "READDELTAENTITY"))
 		return *CG_ReadDeltaEntity;
+	else if (!Q_stricmp(name, "RUNPREDICTION"))
+		return *CG_RunPrediction;
 	Com_Printf("CGame: Extension not found.\n");
 	return NULL;
 }

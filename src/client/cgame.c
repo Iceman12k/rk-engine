@@ -60,11 +60,28 @@ static float PF_ReadFloat(void)
 	return f;
 }
 
+static int PF_CG_modelindex(const char *modname)
+{
+	char *name;
+	for (int i = 2; i < cl.csr.max_models; i++) {
+		name = cl.configstrings[cl.csr.models + i];
+		if (!name[0] && i != MODELINDEX_PLAYER) {
+			break;
+		}
+		if (Q_stricmp(name, modname))
+			continue;
+		return i;
+	}
+	return 0;
+}
+
 static const cgame_import_t cgame_import = {
 	.dprintf = PF_dprintf,
 	.error = PF_error,
 	.GetExtension = PF_CG_GetExtension,
 	
+	.modelindex = PF_CG_modelindex,
+
     .ReadChar = MSG_ReadChar,
     .ReadByte = MSG_ReadByte,
     .ReadShort = MSG_ReadShort,
@@ -73,6 +90,9 @@ static const cgame_import_t cgame_import = {
     .ReadString = MSG_ReadString,
     .ReadPosition = MSG_ReadPos,
     .ReadDir = MSG_ReadDir,
+
+	.trace = CL_Trace,
+	.pointcontents = CL_PointContents,
 };
 
 
@@ -192,6 +212,7 @@ void CG_InitGameProgs(void)
 	{
 		cge_e.UI_Render = cge->GetExtension("UI_RENDER");
 		cge_e.CG_ReadDeltaEntity = cge->GetExtension("READDELTAENTITY");
+		cge_e.CG_RunPrediction = cge->GetExtension("RUNPREDICTION");
 	}
 
 	/*

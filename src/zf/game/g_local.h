@@ -30,6 +30,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "shared/game.h"
 #include "common/protocol.h"
 
+#include "../gameplay.h"
+#include "../pmove.h"
+
 #define EDICT_NUM(n) ((edict_t *)((byte *)g_edicts + sizeof(g_edicts[0])*(n)))
 #define NUM_FOR_EDICT(e) ((int)(((byte *)(e) - (byte *)g_edicts) / sizeof(g_edicts[0])))
 

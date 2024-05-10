@@ -32,28 +32,8 @@ void SP_worldspawn(edict_t *ent)
 	//---------------
 
 	// precache assets
-	gi.modelindex("models/objects/gibs/head2/tris.md2"); // test
 	gi.modelindex("models/null.md2");
-	gi.modelindex("models/hud/bar.md2");
-	gi.modelindex("models/weapons/v_pickaxe.md2");
-	gi.modelindex("models/inven/square.md2");
-	gi.modelindex("models/inven/i_pickaxe.md2");
-
-	gi.modelindex("models/monsters/necro.md2");
-	gi.modelindex("models/monsters/wraith.md2");
-	gi.modelindex("models/monsters/torment.md2");
-
-	//gi.imageindex("infoblock");
-	//gi.imageindex("hotbar");
-	//gi.imageindex("hotbars");
-	//gi.imageindex("hotbarc");
-
-	gi.soundindex("western/hammer_hit.wav");
-	gi.soundindex("western/pick_hit.wav");
-	gi.soundindex("western/swing_small.wav");
-	gi.soundindex("western/swing_big.wav");
-	gi.soundindex("western/switch_weapon.wav");
-	gi.soundindex("western/deflect.wav");
+	gi.modelindex("models/weapons/v_hyperb/tris.md2");
 
 #if 0
 #if 1

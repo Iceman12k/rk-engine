@@ -1166,7 +1166,7 @@ static void CL_AddViewWeapon(void)
 
     VectorCopy(cl.refdef.viewangles, gun.angles);
     gun.angles[2] += cl.weapon.muzzle.roll;
-
+	
     V_AddEntity(&gun);
 }
 
@@ -1400,6 +1400,7 @@ Emits all entities, particles, and lights to the refresh
 */
 void CL_AddEntities(void)
 {
+	cl.frame.ps = cgcl.frame.ps;
     CL_CalcViewValues();
     CL_FinishViewValues();
     CL_AddPacketEntities();

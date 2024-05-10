@@ -820,6 +820,7 @@ void CL_PredictAngles(void);
 void CL_PredictMovement(void);
 void CL_CheckPredictionError(void);
 void CL_Trace(trace_t *tr, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int contentmask);
+int CL_PointContents(const vec3_t point);
 
 
 //

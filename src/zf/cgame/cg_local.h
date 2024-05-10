@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../q_list.h"
 #include "../gameplay.h"
+#include "../pmove.h"
 
 #include "common/protocol.h"
 
@@ -141,6 +142,13 @@ typedef struct {
 	server_frame_t 	frame;
 	server_frame_t 	oldframe;
 
+	pmoveParams_t 	pmp;
+	usercmd_t		cmd;
+	usercmd_t		cmds[CMD_BACKUP];
+
+	short			predicted_origins[CMD_BACKUP][3];
+	vec3_t			localmove;
+
 	int				servertime;
 	int				serverdelta;
 	int				time;
@@ -157,6 +165,8 @@ typedef struct {
 	void		(*q_noreturn q_printf(1, 2) error)(const char *fmt, ...);
 	void		*(*GetExtension)(const char *name);
 
+	int		(*modelindex)(const char *name);
+
 	int 	(*ReadChar)(void);
 	int 	(*ReadByte)(void);
 	int 	(*ReadShort)(void);
@@ -165,6 +175,9 @@ typedef struct {
 	void 	(*ReadString)(char *dest, size_t size);
 	void 	(*ReadPosition)(vec3_t pos);			// some fractional bits
 	void 	(*ReadDir)(vec3_t pos);					// single byte encoded, very coarse
+
+	trace_t (* q_gameabi trace)(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int contentmask);
+    int (*pointcontents)(const vec3_t point);
 } cgame_import_t;
 
 typedef struct {
@@ -198,8 +211,8 @@ void    Com_LPrintf(print_type_t type, const char *fmt, ...);
 
 // cg_networking.c
 void CG_ReadDeltaEntity(entity_state_t *to, entity_state_extension_t *ext, int number, uint64_t bits, msgEsFlags_t flags);
+void CG_RunPrediction(pmove_t *pm, int *o_current, int *o_ack, int *o_frame);
 
 // cg_ui.c
 void CG_UI_Render(vec2_t screensize);
-
 

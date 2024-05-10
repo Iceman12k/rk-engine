@@ -104,6 +104,9 @@ void CG_UI_Render(vec2_t screensize)
 		gx.R_DrawStretchPic(xoff, yoff, HP_BAR_LENGTH, 32, "hp/healthbar_over");
 	}
 	gx.R_ResetClipArea();
+
+	cl->frame.ps.gunindex = gi.modelindex("models/weapons/v_hyperb/tris.md2");
+	cl->frame.ps.gunframe = 6;
 }
 
 

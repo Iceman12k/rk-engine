@@ -17,6 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "client.h"
+#include "client/cgame.h"
 
 /*
 ===================
@@ -135,7 +136,7 @@ static trace_t q_gameabi CL_PMTrace(const vec3_t start, const vec3_t mins, const
     return t;
 }
 
-static int CL_PointContents(const vec3_t point)
+int CL_PointContents(const vec3_t point)
 {
     int         i;
     centity_t   *ent;
@@ -215,46 +216,61 @@ void CL_PredictMovement(void)
         return;
     }
 
-    pm_clipmask = MASK_PLAYERSOLID;
+	if (cge_e.CG_RunPrediction)
+	{
+		cgcl.cmd = cl.cmd;
+		cgcl.pmp = cl.pmp;
+		//VectorCopy(pm.s.origin, cl.predicted_origins[(current + 1) & CMD_MASK]);
+		memcpy(cgcl.predicted_origins, cl.predicted_origins, sizeof(cl.predicted_origins));
+		memcpy(cgcl.cmds, cl.cmds, sizeof(cl.cmds));
+		VectorCopy(cl.localmove, cgcl.localmove);
+		cge_e.CG_RunPrediction(&pm, &current, &ack, &frame);
+		memcpy(cl.cmds, cgcl.cmds, sizeof(cl.cmds));
+		memcpy(cl.predicted_origins, cgcl.predicted_origins, sizeof(cgcl.predicted_origins));
+	}
+	else
+	{
+		pm_clipmask = MASK_PLAYERSOLID;
 
-    // remaster player collision rules
-    if (cl.csr.extended) {
-        if (cl.frame.ps.pmove.pm_type == PM_DEAD || cl.frame.ps.pmove.pm_type == PM_GIB)
-            pm_clipmask = MASK_DEADSOLID;
+		// remaster player collision rules
+		if (cl.csr.extended) {
+			if (cl.frame.ps.pmove.pm_type == PM_DEAD || cl.frame.ps.pmove.pm_type == PM_GIB)
+				pm_clipmask = MASK_DEADSOLID;
 
-        if (!(cl.frame.ps.pmove.pm_flags & PMF_IGNORE_PLAYER_COLLISION))
-            pm_clipmask |= CONTENTS_PLAYER;
-    }
+			if (!(cl.frame.ps.pmove.pm_flags & PMF_IGNORE_PLAYER_COLLISION))
+				pm_clipmask |= CONTENTS_PLAYER;
+		}
 
-    // copy current state to pmove
-    memset(&pm, 0, sizeof(pm));
-    pm.trace = CL_PMTrace;
-    pm.pointcontents = CL_PointContents;
-    pm.s = cl.frame.ps.pmove;
+		// copy current state to pmove
+		memset(&pm, 0, sizeof(pm));
+		pm.trace = CL_PMTrace;
+		pm.pointcontents = CL_PointContents;
+		pm.s = cl.frame.ps.pmove;
 
-    // run frames
-    while (++ack <= current) {
-        pm.cmd = cl.cmds[ack & CMD_MASK];
-        Pmove(&pm, &cl.pmp);
+		// run frames
+		while (++ack <= current) {
+			pm.cmd = cl.cmds[ack & CMD_MASK];
+			Pmove(&pm, &cl.pmp);
 
-        // save for debug checking
-        VectorCopy(pm.s.origin, cl.predicted_origins[ack & CMD_MASK]);
-    }
+			// save for debug checking
+			VectorCopy(pm.s.origin, cl.predicted_origins[ack & CMD_MASK]);
+		}
 
-    // run pending cmd
-    if (cl.cmd.msec) {
-        pm.cmd = cl.cmd;
-        pm.cmd.forwardmove = cl.localmove[0];
-        pm.cmd.sidemove = cl.localmove[1];
-        pm.cmd.upmove = cl.localmove[2];
-        Pmove(&pm, &cl.pmp);
-        frame = current;
+		// run pending cmd
+		if (cl.cmd.msec) {
+			pm.cmd = cl.cmd;
+			pm.cmd.forwardmove = cl.localmove[0];
+			pm.cmd.sidemove = cl.localmove[1];
+			pm.cmd.upmove = cl.localmove[2];
+			Pmove(&pm, &cl.pmp);
+			frame = current;
 
-        // save for debug checking
-        VectorCopy(pm.s.origin, cl.predicted_origins[(current + 1) & CMD_MASK]);
-    } else {
-        frame = current - 1;
-    }
+			// save for debug checking
+			VectorCopy(pm.s.origin, cl.predicted_origins[(current + 1) & CMD_MASK]);
+		} else {
+			frame = current - 1;
+		}
+	}
 
     if (pm.s.pm_type != PM_SPECTATOR && (pm.s.pm_flags & PMF_ON_GROUND)) {
         oldz = cl.predicted_origins[cl.predicted_step_frame & CMD_MASK][2];
