@@ -217,7 +217,8 @@ void ClientThink(edict_t *ent, usercmd_t *ucmd)
 	pm.pointcontents = gi.pointcontents;
 
 	// perform a pmove
-	gi.Pmove(&pm);
+	//gi.Pmove(&pm);
+	Pmove(&pm, &global_pmp);
 
 	for (i = 0; i < 3; i++) {
 		ent->s.origin[i] = SHORT2COORD(pm.s.origin[i]);

@@ -17,7 +17,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "shared/shared.h"
-#include "common/pmove.h"
+#include "pmove.h"
+
+const pmoveParams_t global_pmp = {
+	.speedmult = 1,
+    .watermult = 0.5f,
+    .maxspeed = 300,
+    .friction = 6,
+    .waterfriction = 1,
+    .flyfriction = 9,
+	.strafehack = 1,
+};
 
 #define STEPSIZE    18
 

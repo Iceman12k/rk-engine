@@ -168,7 +168,7 @@ void CG_RunPrediction(pmove_t *pm, int *o_current, int *o_ack, int *o_frame)
 	// run frames
 	while (++ack <= current) {
 		pm->cmd = cl->cmds[ack & CMD_MASK];
-		Pmove(pm, &cl->pmp);
+		Pmove(pm, &global_pmp);
 
 		// save for debug checking
 		VectorCopy(pm->s.origin, cl->predicted_origins[ack & CMD_MASK]);
@@ -181,7 +181,7 @@ void CG_RunPrediction(pmove_t *pm, int *o_current, int *o_ack, int *o_frame)
 		pm->cmd.forwardmove = cl->localmove[0];
 		pm->cmd.sidemove = cl->localmove[1];
 		pm->cmd.upmove = cl->localmove[2];
-		Pmove(pm, &cl->pmp);
+		Pmove(pm, &global_pmp);
 		frame = current;
 
 		// save for debug checking
