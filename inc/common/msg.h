@@ -129,7 +129,7 @@ void    MSG_PackEntity(entity_packed_t *out, const entity_state_t *in, const ent
 void    MSG_WriteDeltaEntity(const entity_packed_t *from, const entity_packed_t *to, msgEsFlags_t flags);
 void    MSG_PackPlayer(player_packed_t *out, const player_state_t *in);
 void    MSG_WriteDeltaPlayerstate_Default(const player_packed_t *from, const player_packed_t *to, msgPsFlags_t flags);
-int     MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t *from, player_packed_t *to, msgPsFlags_t flags);
+void    MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t *from, player_packed_t *to, msgPsFlags_t flags);
 void    MSG_WriteDeltaPlayerstate_Packet(const player_packed_t *from, const player_packed_t *to, int number, msgPsFlags_t flags);
 
 static inline void *MSG_WriteData(const void *data, size_t len)
@@ -165,7 +165,7 @@ int     MSG_ParseEntityBits(uint64_t *bits, msgEsFlags_t flags);
 void    MSG_ParseDeltaEntity(entity_state_t *to, entity_state_extension_t *ext, int number, uint64_t bits, msgEsFlags_t flags);
 #if USE_CLIENT
 void    MSG_ParseDeltaPlayerstate_Default(const player_state_t *from, player_state_t *to, int flags, msgPsFlags_t psflags);
-void    MSG_ParseDeltaPlayerstate_Enhanced(const player_state_t *from, player_state_t *to, int flags, int extraflags, msgPsFlags_t psflags);
+void    MSG_ParseDeltaPlayerstate_Enhanced(const player_state_t *from, player_state_t *to, msgPsFlags_t psflags);
 #endif
 void    MSG_ParseDeltaPlayerstate_Packet(const player_state_t *from, player_state_t *to, int flags, msgPsFlags_t psflags);
 

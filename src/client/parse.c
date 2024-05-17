@@ -198,6 +198,13 @@ static void CL_ParsePacketEntities(server_frame_t *oldframe,
             oldnum = oldstate->number;
         }
     }
+
+	// cpy over entity states to cg's array for rendering
+	for(int i = frame->firstEntity; i < frame->firstEntity + frame->numEntities; i++)
+	{
+		int j = i & PARSE_ENTITIES_MASK;
+		cl.cg_entityStates[j] = cl.entityStates[j];
+	}
 }
 
 static void CL_ParseFrame(int extrabits)
@@ -238,7 +245,7 @@ static void CL_ParseFrame(int extrabits)
         } else if (suppressed) {
             cl.frameflags |= FF_SUPPRESSED;
         }
-        extraflags = (extrabits << 4) | (bits >> SUPPRESSCOUNT_BITS);
+        //extraflags = (extrabits << 4) | (bits >> SUPPRESSCOUNT_BITS);
     } else {
         currentframe = MSG_ReadLong();
         deltaframe = MSG_ReadLong();
@@ -319,9 +326,10 @@ static void CL_ParseFrame(int extrabits)
     SHOWNET(2, "%3u:playerinfo\n", msg_read.readcount - 1);
 
     // parse playerstate
-    bits = MSG_ReadWord();
     if (cls.serverProtocol > PROTOCOL_VERSION_DEFAULT) {
-        MSG_ParseDeltaPlayerstate_Enhanced(from, &frame.ps, bits, extraflags, cl.psFlags);
+		frame.clientNum = MSG_ReadShort();
+        MSG_ParseDeltaPlayerstate_Enhanced(from, &frame.ps, cl.psFlags);
+#if 0
 #if USE_DEBUG
         if (cl_shownet->integer > 2 && (bits || extraflags)) {
             Com_LPrintf(PRINT_DEVELOPER, "   ");
@@ -329,7 +337,9 @@ static void CL_ParseFrame(int extrabits)
             Com_LPrintf(PRINT_DEVELOPER, "\n");
         }
 #endif
+#endif
         if (cls.serverProtocol == PROTOCOL_VERSION_Q2PRO) {
+			/*/
             // parse clientNum
             if (extraflags & EPS_CLIENTNUM) {
                 if (cls.protocolVersion < PROTOCOL_VERSION_Q2PRO_CLIENTNUM_SHORT) {
@@ -343,10 +353,12 @@ static void CL_ParseFrame(int extrabits)
             } else if (oldframe) {
                 frame.clientNum = oldframe->clientNum;
             }
+			*/
         } else {
             frame.clientNum = cl.clientNum;
         }
     } else {
+		bits = MSG_ReadWord();
         MSG_ParseDeltaPlayerstate_Default(from, &frame.ps, bits, cl.psFlags);
 #if USE_DEBUG
         if (cl_shownet->integer > 2 && bits) {
@@ -399,6 +411,9 @@ static void CL_ParseFrame(int extrabits)
 
     cl.oldframe = cgcl.oldframe = cl.frame;
     cl.frame = cgcl.frame = frame;
+
+	if (cge_e.CG_FinalizeFrame)
+		cge_e.CG_FinalizeFrame();
 
 #if USE_FPS
     if (CL_FRAMESYNC) {

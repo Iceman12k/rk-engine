@@ -135,6 +135,128 @@ void CG_ReadDeltaEntity(entity_state_t *to, entity_state_extension_t *ext, int n
 	}
 }
 
+void CG_ReadDeltaPlayerState(const player_state_t *from, player_state_t *to, msgPsFlags_t psflags)
+{
+	int         i;
+	int         statbits;
+	int			flags, extraflags;
+
+	Q_assert(to);
+
+	// clear to old value before delta parsing
+	if (!from) {
+		memset(to, 0, sizeof(*to));
+	} else if (to != from) {
+		memcpy(to, from, sizeof(*to));
+	}
+
+	flags = MSG_ReadWord();
+	extraflags = MSG_ReadByte();
+
+	//
+	// parse the pmove_state_t
+	//
+	if (flags & PS_M_TYPE)
+		to->pmove.pm_type = MSG_ReadByte();
+
+	if (flags & PS_M_ORIGIN) {
+		to->pmove.origin[0] = MSG_ReadShort();
+		to->pmove.origin[1] = MSG_ReadShort();
+	}
+
+	if (extraflags & EPS_M_ORIGIN2)
+		to->pmove.origin[2] = MSG_ReadShort();
+
+	if (flags & PS_M_VELOCITY) {
+		to->pmove.velocity[0] = MSG_ReadShort();
+		to->pmove.velocity[1] = MSG_ReadShort();
+	}
+
+	if (extraflags & EPS_M_VELOCITY2)
+		to->pmove.velocity[2] = MSG_ReadShort();
+
+	if (flags & PS_M_TIME)
+		to->pmove.pm_time = MSG_ReadByte();
+
+	if (flags & PS_M_FLAGS)
+		to->pmove.pm_flags = MSG_ReadByte();
+
+	if (flags & PS_M_GRAVITY)
+		to->pmove.gravity = MSG_ReadShort();
+
+	if (flags & PS_M_DELTA_ANGLES) {
+		to->pmove.delta_angles[0] = MSG_ReadShort();
+		to->pmove.delta_angles[1] = MSG_ReadShort();
+		to->pmove.delta_angles[2] = MSG_ReadShort();
+	}
+
+	//
+	// parse the rest of the player_state_t
+	//
+	if (flags & PS_VIEWOFFSET) {
+		to->viewoffset[0] = MSG_ReadChar() * 0.25f;
+		to->viewoffset[1] = MSG_ReadChar() * 0.25f;
+		to->viewoffset[2] = MSG_ReadChar() * 0.25f;
+	}
+
+	if (flags & PS_VIEWANGLES) {
+		to->viewangles[0] = MSG_ReadAngle16();
+		to->viewangles[1] = MSG_ReadAngle16();
+	}
+
+	if (extraflags & EPS_VIEWANGLE2)
+		to->viewangles[2] = MSG_ReadAngle16();
+
+	if (flags & PS_KICKANGLES) {
+		to->kick_angles[0] = MSG_ReadChar() * 0.25f;
+		to->kick_angles[1] = MSG_ReadChar() * 0.25f;
+		to->kick_angles[2] = MSG_ReadChar() * 0.25f;
+	}
+
+	if (flags & PS_WEAPONINDEX) {
+		if (psflags & MSG_PS_EXTENSIONS)
+			to->gunindex = MSG_ReadWord();
+		else
+			to->gunindex = MSG_ReadByte();
+	}
+
+	if (flags & PS_WEAPONFRAME)
+		to->gunframe = MSG_ReadByte();
+
+	if (extraflags & EPS_GUNOFFSET) {
+		to->gunoffset[0] = MSG_ReadChar() * 0.25f;
+		to->gunoffset[1] = MSG_ReadChar() * 0.25f;
+		to->gunoffset[2] = MSG_ReadChar() * 0.25f;
+	}
+
+	if (extraflags & EPS_GUNANGLES) {
+		to->gunangles[0] = MSG_ReadChar() * 0.25f;
+		to->gunangles[1] = MSG_ReadChar() * 0.25f;
+		to->gunangles[2] = MSG_ReadChar() * 0.25f;
+	}
+
+	if (flags & PS_BLEND) {
+		to->blend[0] = MSG_ReadByte() / 255.0f;
+		to->blend[1] = MSG_ReadByte() / 255.0f;
+		to->blend[2] = MSG_ReadByte() / 255.0f;
+		to->blend[3] = MSG_ReadByte() / 255.0f;
+	}
+
+	if (flags & PS_FOV)
+		to->fov = MSG_ReadByte();
+
+	if (flags & PS_RDFLAGS)
+		to->rdflags = MSG_ReadByte();
+
+	// parse stats
+	if (extraflags & EPS_STATS) {
+		statbits = MSG_ReadLong();
+		for (i = 0; i < MAX_STATS; i++)
+			if (statbits & BIT(i))
+				to->stats[i] = MSG_ReadShort();
+	}
+}
+
 
 
 // prediction
@@ -161,7 +283,7 @@ void CG_RunPrediction(pmove_t *pm, int *o_current, int *o_ack, int *o_frame)
 		pm_clipmask |= CONTENTS_PLAYER;
 
 	// copy current state to pmove
-	memset(pm, 0, sizeof(pm));
+	memset(pm, 0, sizeof(pmove_t));
 	pm->trace = PM_trace;
 	pm->pointcontents = gi.pointcontents;
 	pm->s = cl->frame.ps.pmove;
@@ -198,6 +320,22 @@ void CG_RunPrediction(pmove_t *pm, int *o_current, int *o_ack, int *o_frame)
 	*o_frame = frame;
 }
 
+
+// called after frame has been parsed
+void CG_FinalizeFrame(void)
+{
+	int i = cl->frame.firstEntity;
+	for(; i < (cl->frame.firstEntity + cl->frame.numEntities); i++)
+	{
+		int j = i & ENTITY_STATE_MASK;
+		centity_state_t *ent = &cl->entityStates[j];
+
+		if (ent->s.type == 0) // 0 type ents are treated like normal
+			continue;
+
+		
+	}
+}
 
 
 

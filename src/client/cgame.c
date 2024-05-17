@@ -85,6 +85,7 @@ static const cgame_import_t cgame_import = {
     .ReadChar = MSG_ReadChar,
     .ReadByte = MSG_ReadByte,
     .ReadShort = MSG_ReadShort,
+	.ReadWord = MSG_ReadWord,
     .ReadLong = MSG_ReadLong,
     .ReadFloat = PF_ReadFloat,
     .ReadString = MSG_ReadString,
@@ -208,11 +209,15 @@ void CG_InitGameProgs(void)
 
 	memset(&cge_e, 0, sizeof(cge_e));
 	memset(&cgcl, 0, sizeof(cgcl));
+	cgcl.num_entityStates = sizeof(cl.entityStates) / sizeof(cl.entityStates[0]);
+	cgcl.entityStates = cl.cg_entityStates;
 	if (cge->GetExtension)
 	{
 		cge_e.UI_Render = cge->GetExtension("UI_RENDER");
 		cge_e.CG_ReadDeltaEntity = cge->GetExtension("READDELTAENTITY");
+		cge_e.CG_ReadDeltaPlayerState = cge->GetExtension("READDELTAPLAYERSTATE");
 		cge_e.CG_RunPrediction = cge->GetExtension("RUNPREDICTION");
+		cge_e.CG_FinalizeFrame = cge->GetExtension("FINALIZEFRAME");
 	}
 
 	/*

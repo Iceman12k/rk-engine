@@ -191,6 +191,7 @@ typedef struct client_state_s {
     centity_state_t baselines[MAX_EDICTS];
 
     centity_state_t entityStates[MAX_PARSE_ENTITIES];
+	centity_state_t cg_entityStates[MAX_PARSE_ENTITIES];
     int             numEntityStates;
 
     msgEsFlags_t    esFlags;

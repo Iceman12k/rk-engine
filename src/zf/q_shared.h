@@ -181,5 +181,6 @@ void Pmove(pmove_t *pmove, pweapon_state_t *pweapon, const pmoveParams_t *params
 #define MSG_ReadByte(a) gi.ReadByte(a)
 #define MSG_ReadChar(a) gi.ReadChar(a)
 #define MSG_ReadShort(a) gi.ReadShort(a)
+#define MSG_ReadWord(a) gi.ReadWord(a)
 #define MSG_ReadLong(a) gi.ReadLong(a)
 #define MSG_ReadFloat(a) gi.ReadFloat(a)

@@ -3,6 +3,8 @@
 typedef struct {
 	server_frame_t 	frame;
 	server_frame_t 	oldframe;
+	centity_state_t *entityStates;
+	int				num_entityStates;
 
 	pmoveParams_t 	pmp;
 	usercmd_t		cmd;
@@ -31,6 +33,7 @@ typedef struct {
 	int 	(*ReadChar)(void);
 	int 	(*ReadByte)(void);
 	int 	(*ReadShort)(void);
+	int 	(*ReadWord)(void);
 	int 	(*ReadLong)(void);
 	float 	(*ReadFloat)(void);
 	void 	(*ReadString)(char *dest, size_t size);
@@ -58,7 +61,9 @@ typedef struct {
 typedef struct {
 	void	(*UI_Render)(vec2_t screensize);
 	void	(*CG_ReadDeltaEntity)(entity_state_t *to, entity_state_extension_t *ext, int number, uint64_t bits, msgEsFlags_t flags);
+	void 	(*CG_ReadDeltaPlayerState)(const player_state_t *from, player_state_t *to, msgPsFlags_t psflags);
 	void	(*CG_RunPrediction)(pmove_t *pm, int *current, int *ack, int *frame);
+	void	(*CG_FinalizeFrame)();
 } cgame_export_extensions_t;
 
 extern cgame_export_t *cge;

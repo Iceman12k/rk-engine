@@ -82,6 +82,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef struct edict_s edict_t;
 
+typedef union {
+    struct {
+        entity_state_t;
+        entity_state_extension_t;
+    };
+    struct {
+        entity_state_t s;
+        entity_state_extension_t x;
+    };
+} centity_state_t;
+
 typedef enum {
 	SOLID_NOT,          // no interaction with other objects
 	SOLID_TRIGGER,      // only touch when inside, after moving
@@ -141,6 +152,8 @@ typedef struct {
 typedef struct {
 	server_frame_t 	frame;
 	server_frame_t 	oldframe;
+	centity_state_t *entityStates;
+	int				num_entityStates;
 
 	pmoveParams_t 	pmp;
 	usercmd_t		cmd;
@@ -170,6 +183,7 @@ typedef struct {
 	int 	(*ReadChar)(void);
 	int 	(*ReadByte)(void);
 	int 	(*ReadShort)(void);
+	int 	(*ReadWord)(void);
 	int 	(*ReadLong)(void);
 	float 	(*ReadFloat)(void);
 	void 	(*ReadString)(char *dest, size_t size);
@@ -210,8 +224,11 @@ void    Com_LPrintf(print_type_t type, const char *fmt, ...);
 #define Com_Printf(...) Com_LPrintf(PRINT_ALL, __VA_ARGS__)
 
 // cg_networking.c
+#define ENTITY_STATE_MASK (cl->num_entityStates - 1)
 void CG_ReadDeltaEntity(entity_state_t *to, entity_state_extension_t *ext, int number, uint64_t bits, msgEsFlags_t flags);
+void CG_ReadDeltaPlayerState(const player_state_t *from, player_state_t *to, msgPsFlags_t psflags);
 void CG_RunPrediction(pmove_t *pm, int *o_current, int *o_ack, int *o_frame);
+void CG_FinalizeFrame(void);
 
 // cg_ui.c
 void CG_UI_Render(vec2_t screensize);

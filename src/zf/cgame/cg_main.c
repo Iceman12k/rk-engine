@@ -78,7 +78,7 @@ static void CG_Shutdown(void)
 	//gi.FreeTags(TAG_GAME);
 }
 
-static void* CG_FetchGameExtension(char *name)
+static void* CG_FetchGameExtension(const char *name)
 {
 	Com_Printf("CGame: CG_FetchGameExtension for %s\n", name);
 	if (!Q_stricmp(name, "UI_RENDER"))
@@ -87,6 +87,10 @@ static void* CG_FetchGameExtension(char *name)
 		return *CG_ReadDeltaEntity;
 	else if (!Q_stricmp(name, "RUNPREDICTION"))
 		return *CG_RunPrediction;
+	else if (!Q_stricmp(name, "READDELTAPLAYERSTATE"))
+		return *CG_ReadDeltaPlayerState;
+	else if (!Q_stricmp(name, "FINALIZEFRAME"))
+		return *CG_FinalizeFrame;
 	Com_Printf("CGame: Extension not found.\n");
 	return NULL;
 }

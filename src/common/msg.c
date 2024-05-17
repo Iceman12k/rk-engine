@@ -969,7 +969,7 @@ void MSG_WriteDeltaPlayerstate_Default(const player_packed_t *from, const player
             MSG_WriteShort(to->stats[i]);
 }
 
-int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
+void MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
                                              player_packed_t    *to,
                                              msgPsFlags_t       flags)
 {
@@ -1098,6 +1098,7 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
     // write it
     //
     MSG_WriteShort(pflags);
+	MSG_WriteByte(eflags);
 
     //
     // write the pmove_state_t
@@ -2079,12 +2080,11 @@ MSG_ParseDeltaPlayerstate_Default
 */
 void MSG_ParseDeltaPlayerstate_Enhanced(const player_state_t    *from,
                                         player_state_t          *to,
-                                        int                     flags,
-                                        int                     extraflags,
                                         msgPsFlags_t            psflags)
 {
     int         i;
     int         statbits;
+	int			flags, extraflags;
 
     Q_assert(to);
 
@@ -2094,6 +2094,9 @@ void MSG_ParseDeltaPlayerstate_Enhanced(const player_state_t    *from,
     } else if (to != from) {
         memcpy(to, from, sizeof(*to));
     }
+
+	flags = MSG_ReadWord();
+	extraflags = MSG_ReadByte();
 
     //
     // parse the pmove_state_t

@@ -397,7 +397,7 @@ void CL_DeltaFrame(void)
     // set current and prev, unpack solid, etc
     for (i = 0; i < cl.frame.numEntities; i++) {
         j = (cl.frame.firstEntity + i) & PARSE_ENTITIES_MASK;
-        parse_entity_update(&cl.entityStates[j]);
+        parse_entity_update(&cl.cg_entityStates[j]);
     }
 
     // fire events. due to footstep tracing this must be after updating entities.
@@ -497,14 +497,14 @@ static void CL_AddPacketEntities(void)
 
     // brush models can auto animate their frames
     autoanim = 2 * cl.time / 1000;
-
+	
     autobob = 5 * sin(cl.time / 400.0f);
 
     memset(&ent, 0, sizeof(ent));
 
     for (pnum = 0; pnum < cl.frame.numEntities; pnum++) {
         i = (cl.frame.firstEntity + pnum) & PARSE_ENTITIES_MASK;
-        s1 = &cl.entityStates[i];
+        s1 = &cl.cg_entityStates[i];
 
         cent = &cl_entities[s1->number];
 

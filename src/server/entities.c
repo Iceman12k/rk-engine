@@ -290,8 +290,10 @@ void SV_WriteFrameToClient_Enhanced(client_t *client)
     }
 
     // delta encode the playerstate
-    extraflags = MSG_WriteDeltaPlayerstate_Enhanced(oldstate, &frame->ps, psFlags);
-
+	MSG_WriteShort(frame->clientNum);
+    MSG_WriteDeltaPlayerstate_Enhanced(oldstate, &frame->ps, psFlags);
+	extraflags = 0;
+	/*
     if (client->protocol == PROTOCOL_VERSION_Q2PRO) {
         // delta encode the clientNum
         if ((oldframe ? oldframe->clientNum : 0) != frame->clientNum) {
@@ -303,13 +305,15 @@ void SV_WriteFrameToClient_Enhanced(client_t *client)
             }
         }
     }
+	*/
 
     // save 3 high bits of extraflags
-    *b1 = svc_frame | (((extraflags & 0x70) << 1));
+    *b1 = svc_frame;// | (((extraflags & 0x70) << 1));
 
     // save 4 low bits of extraflags
-    *b2 = (suppressed & SUPPRESSCOUNT_MASK) |
-          ((extraflags & 0x0F) << SUPPRESSCOUNT_BITS);
+    //*b2 = (suppressed & SUPPRESSCOUNT_MASK)// |
+    //      ((extraflags & 0x0F) << SUPPRESSCOUNT_BITS);
+	*b2 = (suppressed & SUPPRESSCOUNT_MASK);
 
     client->suppress_count = 0;
     client->frameflags = 0;
